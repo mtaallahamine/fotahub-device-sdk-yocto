@@ -1,5 +1,44 @@
 #!/bin/bash
 
+create_yocto_project_layout()
+{
+  local MACHINE="$1"
+
+  # Locate Yocto project
+  if [ -z "$YOCTO_PROJECT_DIR" ]; then
+    export YOCTO_PROJECT_DIR=$PWD
+  fi
+
+  # Locate/create Yocto data area
+  if [ -z "$YOCTO_DATA_DIR" ]; then
+    export YOCTO_DATA_DIR=$PWD/build/yocto
+  fi
+  if [ ! -d "$YOCTO_DATA_DIR" ]; then
+    mkdir -p "$YOCTO_DATA_DIR"
+  fi
+
+  # Locate Yocto layer sources area
+  if [ -z "$YOCTO_SOURCES_DIR" ]; then
+    export YOCTO_SOURCES_DIR="$YOCTO_DATA_DIR/sources"
+  fi
+
+  # Locate Yocto layer sources git-repo manifest
+  if [ -z "$YOCTO_LAYER_MANIFEST_FILE" ]; then
+    YOCTO_LAYER_MANIFEST_FILE="$YOCTO_PROJECT_DIR/manifest.xml"
+  fi
+  if [ ! -f "$YOCTO_LAYER_MANIFEST_FILE" ] || [ ! -s "$YOCTO_LAYER_MANIFEST_FILE" ]; then
+    echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST_FILE' is missing."
+    return 1
+  fi
+
+  # Locate Yocto build area
+  if [ -z "$YOCTO_BUILD_DIR" ]; then
+    export YOCTO_BUILD_DIR="$YOCTO_DATA_DIR/build"
+  fi
+
+  return 0
+}
+
 sync_yocto_layers()
 {
   local MANIFEST_FILE=$1
@@ -37,13 +76,18 @@ show_usage()
   echo "        Initialize Yocto project for given machine"
   echo "        e.g. init raspberrypi3"
   echo
+  echo "    fullmetalupdate-containers"
+  echo "        Build Full Metal Update containers image"
+  echo
+  echo "    fullmetalupdate-os"
+  echo "        Build Full Metal Update OS image"
+  echo
   echo "    bash"
   echo "        Start an interactive bash shell in the build container"
   echo
   echo "    help"
   echo "        Show this text"
   echo
-  exit 1
 }
 
 main()
@@ -55,35 +99,13 @@ main()
   local COMMAND="$1"
   local MACHINE="$2"
 
-  # Locate Yocto project
-  if [ -z "$YOCTO_PROJECT_DIR" ]; then
-    export YOCTO_PROJECT_DIR=$PWD
-  fi
-
-  # Locate/create Yocto data area
-  if [ -z "$YOCTO_DATA_DIR" ]; then
-    export YOCTO_DATA_DIR=$PWD/build/yocto
-  fi
-  if [ ! -d "$YOCTO_DATA_DIR" ]; then
-    mkdir -p "$YOCTO_DATA_DIR"
-  fi
-
-  # Locate Yocto layer sources area
-  if [ -z "$YOCTO_SOURCES_DIR" ]; then
-    export YOCTO_SOURCES_DIR="$YOCTO_DATA_DIR/sources"
-  fi
-  if [ ! -d "$YOCTO_SOURCES_DIR" ] && [ "$1" != "init" ] && [ "$1" != "help" ]; then
-    echo "ERROR: The directory '$YOCTO_SOURCES_DIR' does not yet exist. Use the 'init' command first."
+  if ! create_yocto_project_layout $MACHINE; then
     exit 1
   fi
 
-  # Locate Yocto build area
-  if [ -z "$YOCTO_BUILD_DIR" ]; then
-    if [ "$MACHINE" != "" ]; then
-      export YOCTO_BUILD_DIR="$YOCTO_DATA_DIR/build-$MACHINE"
-    else
-      export YOCTO_BUILD_DIR=$YOCTO_DATA_DIR/$(ls build/yocto | grep build-)
-    fi
+  if [ ! -d "$YOCTO_BUILD_DIR/conf" ] && [ "$COMMAND" != "init" ] && [ "$COMMAND" != "help" ]; then
+    echo "ERROR: The Yocto build directory '$YOCTO_BUILD_DIR' has not yet been initialized. Use the 'init' command first. Use the 'help' command to get more details."
+    exit 1
   fi
 
   case "$COMMAND" in
@@ -94,20 +116,29 @@ main()
         exit 1
       fi
 
-      if [ -z "$YOCTO_LAYER_MANIFEST_FILE" ]; then
-        YOCTO_LAYER_MANIFEST_FILE="$YOCTO_PROJECT_DIR/manifest.xml"
-      fi
-      if [ ! -f "$YOCTO_LAYER_MANIFEST_FILE" ] || [ ! -s "$YOCTO_LAYER_MANIFEST_FILE" ]; then
-        echo "ERROR: The Yocto layer git-repo manifest '$YOCTO_LAYER_MANIFEST_FILE' is missing."
+      if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST_FILE" "$YOCTO_SOURCES_DIR"; then
         exit 1
       fi
-
-      sync_yocto_layers "$YOCTO_LAYER_MANIFEST_FILE" "$YOCTO_SOURCES_DIR"
 
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-pre-init-build-env $MACHINE
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
+      ;;
+
+    fullmetalupdate-containers)
+      cd "${YOCTO_DATA_DIR}"
+      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
+      ;;
+
+    fullmetalupdate-os)
+      cd "${YOCTO_DATA_DIR}"
+      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      if [ ! -d "${YOCTO_BUILD_DIR}/tmp/fullmetalupdate-containers/deploy/containers" ]; then
+        DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
+      fi
+      DISTRO=fullmetalupdate-os bitbake fullmetalupdate-os-package -k
       ;;
 
     bash)
