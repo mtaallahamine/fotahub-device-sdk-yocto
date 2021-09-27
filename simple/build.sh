@@ -72,8 +72,8 @@ show_usage()
   echo "Usage: build.sh command [args]"
   echo
   echo "Commands:"
-  echo "    init <machine>"
-  echo "        Initialize Yocto project for given machine"
+  echo "    sync <machine>"
+  echo "        Initialize/synchronize Yocto project for given machine"
   echo "        e.g. init raspberrypi3"
   echo
   echo "    fullmetalupdate-containers"
@@ -109,7 +109,7 @@ main()
   fi
 
   case "$COMMAND" in
-    init)
+    sync)
       shift; set -- "$@"
       if [ $# -ne 1 ]; then
         echo "ERROR: The init command requires 1 argument. Use the 'help' command to get more details."
