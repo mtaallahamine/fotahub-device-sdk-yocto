@@ -74,7 +74,7 @@ show_usage()
   echo "Commands:"
   echo "    sync <machine>"
   echo "        Initialize/synchronize Yocto project for given machine"
-  echo "        e.g. init raspberrypi3"
+  echo "        e.g. sync raspberrypi3"
   echo
   echo "    fullmetalupdate-containers"
   echo "        Build Full Metal Update containers image"
