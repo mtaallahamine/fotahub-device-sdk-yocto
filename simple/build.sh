@@ -80,7 +80,7 @@ show_usage()
   echo "        Build Full Metal Update containers image"
   echo
   echo "    fullmetalupdate-os"
-  echo "        Build Full Metal Update OS image"
+  echo "        Build Full Metal Update OS image and WIC"
   echo
   echo "    bash"
   echo "        Start an interactive bash shell in the build container"
@@ -103,8 +103,8 @@ main()
     exit 1
   fi
 
-  if [ ! -d "$YOCTO_BUILD_DIR/conf" ] && [ "$COMMAND" != "init" ] && [ "$COMMAND" != "help" ]; then
-    echo "ERROR: The Yocto build directory '$YOCTO_BUILD_DIR' has not yet been initialized. Use the 'init' command first. Use the 'help' command to get more details."
+  if [ ! -d "$YOCTO_BUILD_DIR/conf" ] && [ "$COMMAND" != "sync" ] && [ "$COMMAND" != "help" ]; then
+    echo "ERROR: The Yocto build directory '$YOCTO_BUILD_DIR' has not yet been initialized. Use the 'sync' command first. Use the 'help' command to get more details."
     exit 1
   fi
 
@@ -112,7 +112,7 @@ main()
     sync)
       shift; set -- "$@"
       if [ $# -ne 1 ]; then
-        echo "ERROR: The init command requires 1 argument. Use the 'help' command to get more details."
+        echo "ERROR: The sync command requires 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
 
@@ -126,12 +126,14 @@ main()
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
       ;;
 
+    # all-apps
     fullmetalupdate-containers)
       cd "${YOCTO_DATA_DIR}"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
       ;;
 
+    # all
     fullmetalupdate-os)
       cd "${YOCTO_DATA_DIR}"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
@@ -140,6 +142,9 @@ main()
       fi
       DISTRO=fullmetalupdate-os bitbake fullmetalupdate-os-package -k
       ;;
+
+    # app <app-name>
+    # force compilation -c clean (cleansstate)
 
     bash)
       cd "$YOCTO_DATA_DIR"
