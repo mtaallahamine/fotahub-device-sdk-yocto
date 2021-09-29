@@ -3,6 +3,7 @@ setlocal
 
 docker volume create yocto-factory-data
 docker run ^
+  --name yocto-factory ^
   --interactive --tty --rm ^
   --volume yocto-factory-data:/build/yocto ^
   --volume %~dp0:/project ^

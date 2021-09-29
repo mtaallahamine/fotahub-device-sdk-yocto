@@ -68,26 +68,32 @@ sync_yocto_layers()
 
 show_usage()
 {
-  echo
-  echo "Usage: build.sh command [args]"
-  echo
-  echo "Commands:"
-  echo "    sync <machine>"
-  echo "        Initialize/synchronize Yocto project for given machine"
-  echo "        e.g. sync raspberrypi3"
-  echo
-  echo "    fullmetalupdate-containers"
-  echo "        Build Full Metal Update containers image"
-  echo
-  echo "    fullmetalupdate-os"
-  echo "        Build Full Metal Update OS image and WIC"
-  echo
-  echo "    bash"
-  echo "        Start an interactive bash shell in the build container"
-  echo
-  echo "    help"
-  echo "        Show this text"
-  echo
+  cat << EOF
+
+Usage: $(basename $0) command [args]"
+
+Commands:
+    sync <machine>
+        Initialize/synchronize Yocto project for given machine
+        (e.g. sync raspberrypi3)
+
+    all
+        Build OS image including all applications as well as machine-dependent live image
+        (e.g. '.wic' for Raspberry Pi)
+
+    all-apps
+        Build all applications
+
+    app <app-name>
+        Rebuild given application
+
+    bash
+        Start an interactive bash shell in the build container
+
+    help
+        Show this text
+
+EOF
 }
 
 main()
@@ -112,7 +118,7 @@ main()
     sync)
       shift; set -- "$@"
       if [ $# -ne 1 ]; then
-        echo "ERROR: The sync command requires 1 argument. Use the 'help' command to get more details."
+        echo "ERROR: The "$COMMAND" command requires exactly 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
 
@@ -126,15 +132,7 @@ main()
       source $YOCTO_SOURCES_DIR/meta-fotahub/fh-post-init-build-env $MACHINE
       ;;
 
-    # all-apps
-    fullmetalupdate-containers)
-      cd "${YOCTO_DATA_DIR}"
-      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
-      DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
-      ;;
-
-    # all
-    fullmetalupdate-os)
+    all)
       cd "${YOCTO_DATA_DIR}"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       if [ ! -d "${YOCTO_BUILD_DIR}/tmp/fullmetalupdate-containers/deploy/containers" ]; then
@@ -143,9 +141,24 @@ main()
       DISTRO=fullmetalupdate-os bitbake fullmetalupdate-os-package -k
       ;;
 
-    # app <app-name>
-    # force compilation -c clean (cleansstate)
+    all-apps)
+      cd "${YOCTO_DATA_DIR}"
+      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
+      ;;
 
+    app)
+      shift; set -- "$@"
+      if [ $# -ne 1 ]; then
+        echo "ERROR: The "$COMMAND" command requires exactly 1 argument. Use the 'help' command to get more details."
+        exit 1
+      fi
+
+      cd "${YOCTO_DATA_DIR}"
+      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      DISTRO=fullmetalupdate-containers bitbake $1 -f -k
+      ;;
+  
     bash)
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
