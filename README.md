@@ -1,0 +1,1 @@
+# FotaHub&reg; Device SDK for custom Linux-based systems created with Yocto Project&reg;
