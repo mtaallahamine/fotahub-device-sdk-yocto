@@ -14,19 +14,21 @@ class OSTreeClient(object):
 
         self.ostree_repo = None
 
-    def add_ostree_remote(self, name, url, gpg_verify):
-        if not name in self.ostree_repo.remote_list():
-            self.logger.info(
-                "Adding remote '{}' for {} to local OSTree repo".format(name, url))
+    def has_ostree_remote(self, name):
+        return name in self.ostree_repo.remote_list()
 
-            try:
-                opts = GLib.Variant(
-                    'a{sv}', {'gpg-verify': GLib.Variant('b', gpg_verify)})
-                self.ostree_repo.remote_add(
-                    name, url, opts, None)
-            except GLib.Error as err:
-                raise OSTreeError("Failed to add remote '{}' to local OSTree repo".format(
-                    name)) from err
+    def add_ostree_remote(self, name, url, gpg_verify):
+        self.logger.info(
+            "Adding remote '{}' for {} to local OSTree repo".format(name, url))
+
+        try:
+            opts = GLib.Variant(
+                'a{sv}', {'gpg-verify': GLib.Variant('b', gpg_verify)})
+            self.ostree_repo.remote_add(
+                name, url, opts, None)
+        except GLib.Error as err:
+            raise OSTreeError("Failed to add remote '{}' to local OSTree repo".format(
+                name)) from err
 
     def pull_ostree_revision(self, remote_name, branch_name, revision, depth):
         self.logger.info(

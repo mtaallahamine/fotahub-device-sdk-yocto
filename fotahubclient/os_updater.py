@@ -25,7 +25,9 @@ class OSUpdater(OSTreeClient, UBootOperator):
         self.sysroot = None
 
         self.open_ostree_repo()
-        self.add_ostree_remote(OSTREE_REMOTE_NAME, OSTREE_REMOTE_URL, OSTREE_REMOTE_GPG_VERIFY)
+
+        if not self.has_ostree_remote(OSTREE_REMOTE_NAME):
+            self.add_ostree_remote(OSTREE_REMOTE_NAME, OSTREE_REMOTE_URL, OSTREE_REMOTE_GPG_VERIFY)
     
     def open_ostree_repo(self):
         self.sysroot = OSTree.Sysroot.new_default()
@@ -35,6 +37,9 @@ class OSUpdater(OSTreeClient, UBootOperator):
         [_, repo] = self.sysroot.get_repo()
         self.ostree_repo = repo
 
+    def get_booted_os_revision(self):
+        return self.sysroot.get_booted_deployment().get_csum()
+        
     def pull_os_update(self, branch_name, revision):
         self.pull_ostree_revision(OSTREE_REMOTE_NAME, branch_name, revision, OSTREE_PULL_DEPTH)
         self.stage_os_update(revision)
@@ -74,13 +79,15 @@ class OSUpdater(OSTreeClient, UBootOperator):
 
     def has_os_update_reverted(self, revision):
         self.logger.info("Checking if OS update has reverted to previously installed revision")
-        return self.sysroot.get_booted_deployment().get_csum() != revision
+        return self.get_booted_os_revision() != revision
 
-    def undeploy_reverted_os_update(self):
+    def cleanup_reverted_os_update(self):
         try:
             [pending, _] = self.sysroot.query_deployments_for(None)
             if pending is not None:
-                self.logger.info("Undeploying reverted OS update")
+                self.logger.info(
+                    "Cleaning up reverted OS update with revision '{}'".format(pending.get_csum()))
+                    
                 # 0 is the index of the pending deployment
                 subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)
         except subprocess.CalledProcessError as err:

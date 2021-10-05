@@ -1,4 +1,5 @@
 import subprocess
+import re
 
 UBOOT_SETENV_TOOL = 'fw_setenv'
 UBOOT_PRINTENV_TOOL = 'fw_printenv'
@@ -10,9 +11,9 @@ class UBootOperator(object):
 
     def set_uboot_env_var(self, name, value=None):
         if value != None:
-            self.logger.info("Setting U-Boot environment variable '{}' to '{}'".format(name, value))
+            self.logger.debug("Setting U-Boot environment variable '{}' to '{}'".format(name, value))
         else:
-            self.logger.info("Deleting U-Boot environment variable '{}'".format(name))
+            self.logger.debug("Deleting U-Boot environment variable '{}'".format(name))
 
         try:
             cmd = [UBOOT_SETENV_TOOL, name]
@@ -23,14 +24,17 @@ class UBootOperator(object):
             raise UBootError("Failed to change U-Boot environment variable '{}'".format(name)) from err
 
     def isset_uboot_env_var(self, name):
-        self.logger.info("Checking if U-Boot environment variable '{}' is set".format(name))
+        self.logger.debug("Checking if U-Boot environment variable '{}' is set".format(name))
 
-        cmd = [UBOOT_PRINTENV_TOOL, '|', 'grep', name]
-        process = subprocess.run(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return process.stdout and not process.stderr
+        try:
+            cmd = [UBOOT_PRINTENV_TOOL]
+            process = subprocess.run(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            return bool(re.search(r'^{}='.format(name), process.stdout, re.MULTILINE))
+        except subprocess.CalledProcessError as err:
+          return False
 
     def reboot(self):
-        self.logger.info("Rebooting system to activate staged OS update")
+        self.logger.info("Rebooting system")
         
         try:
             subprocess.run("reboot", check=True)
