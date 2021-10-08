@@ -8,6 +8,6 @@ setup(
     install_requires=[],
     entry_points='''
         [console_scripts]
-        fotahub=fotahubclient.scripts.cli:cli
+        fotahub=fotahubclient.cli.main:cli
     ''',
 )
