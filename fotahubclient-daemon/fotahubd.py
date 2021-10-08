@@ -1,6 +1,7 @@
 import argparse
 import sys
 import os
+import traceback
 
 from distutils.util import strtobool
 
@@ -28,7 +29,10 @@ def main():
         os_update_finalizer = OSUpdateFinalizer(config_loader.self_test_command)
         os_update_finalizer.run()
     except Exception as err:
-        print(str(err), file=sys.stderr)
+        if args.verbose:
+            print(''.join(traceback.format_exception(type(err), err, err.__traceback__)), file=sys.stderr)
+        else:
+            print('ERROR: ' + str(err), file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

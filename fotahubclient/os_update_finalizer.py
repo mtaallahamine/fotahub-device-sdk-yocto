@@ -1,5 +1,6 @@
 import subprocess
 import logging
+import shlex
 
 from fotahubclient.os_updater import OSUpdater
 
@@ -25,15 +26,18 @@ class OSUpdateFinalizer(object):
     def run_self_test(self):
         if self.self_test_command is not None:
             logging.getLogger().info('Running build-in self test')
-            process = subprocess.run(self.self_test_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-            if process.returncode:
-                self.logger.info('Build-in self test succeeded')
+            process = subprocess.run(shlex.split(self.self_test_command), universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            if process.returncode == 0:
+                message = 'Build-in self test succeeded'
+                if process.stdout:
+                    message += ': ' + process.stdout
+                self.logger.info(message)
                 return True
             else:
-                error_message = 'Build-in self test failed'
+                message = 'Build-in self test failed'
                 if process.stderr:
-                    error_message += ': ' + process.stderr
+                    message += ': ' + process.stderr
                 elif process.stdout:
-                    error_message += ': ' + process.stdout
-                self.logger.error(error_message)
+                    message += ': ' + process.stdout
+                self.logger.error(message)
                 return False

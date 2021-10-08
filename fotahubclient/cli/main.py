@@ -1,7 +1,7 @@
 import argparse
 import sys
 import os
-import logging
+import traceback
 
 from fotahubclient.config_loader import ConfigLoader
 import fotahubclient.cli.command_interpreter as commands
@@ -45,7 +45,10 @@ def main():
         command_interpreter = CommandInterpreter(config_loader.os_distro_name)
         command_interpreter.run(args)
     except Exception as err:
-        print(str(err), file=sys.stderr)
+        if args.verbose:
+            print(''.join(traceback.format_exception(type(err), err, err.__traceback__)), file=sys.stderr)
+        else:
+            print('ERROR: ' + str(err), file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

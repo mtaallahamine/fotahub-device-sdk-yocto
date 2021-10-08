@@ -1,6 +1,7 @@
 import logging
 
 from fotahubclient.os_updater import OSUpdater
+from fotahubclient.update_status_describer import UpdateStatusDescriber
 
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
 UPDATE_APPLICATION_CMD = 'update-application'
@@ -32,4 +33,5 @@ class CommandInterpreter(object):
 
     def describe_update_status(self):
         self.logger.debug('Retrieving update status')
-        raise ValueError('Not yet implemented')
+        describer = UpdateStatusDescriber()
+        print(describer.describe_update_statuses())

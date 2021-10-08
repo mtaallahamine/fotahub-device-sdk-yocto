@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+from pathlib import Path
 
 from distutils.util import strtobool
 from configparser import ConfigParser
@@ -20,9 +21,9 @@ class ConfigLoader(object):
         self.self_test_command = None
 
     def load_config(self):
-        config_path = os.path.Path(self.config_path)
+        config_path = Path(self.config_path)
         if not config_path.is_file():
-            raise FileNotFoundError("FotaHub client configuration file '{}' does not exist".format(config_path.name), file=sys.stderr)
+            raise FileNotFoundError("FotaHub client configuration file '{}' does not exist".format(config_path))
         config_parser = ConfigParser()
         config_parser.read_file(config_path.open())
 
