@@ -15,7 +15,7 @@ OSTREE_PULL_DEPTH = 1
 
 UBOOT_FLAG_ACTIVATING_OS_UPDATE = 'activating_os_update'
 UBOOT_FLAG_REVERTING_OS_UPDATE = 'reverting_os_update'
-UBOOT_VAR_OS_UPDATE_BOOT_FAILURE_CREDIT = 'os_update_boot_failure_credit'
+UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT = 'os_update_reboot_failure_credit'
 
 class OSUpdater(OSTreeClient, UBootOperator):
 
@@ -40,8 +40,8 @@ class OSUpdater(OSTreeClient, UBootOperator):
     def get_booted_os_revision(self):
         return self.sysroot.get_booted_deployment().get_csum()
         
-    def pull_os_update(self, branch_name, revision):
-        self.pull_ostree_revision(OSTREE_REMOTE_NAME, branch_name, revision, OSTREE_PULL_DEPTH)
+    def pull_os_update(self, distro_name, revision):
+        self.pull_ostree_revision(OSTREE_REMOTE_NAME, distro_name, revision, OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
         self.logger.info(
@@ -66,18 +66,18 @@ class OSUpdater(OSTreeClient, UBootOperator):
         except GLib.Error as err:
             raise OSTreeError("Failed to stage OS update with revision '{}'".format(revision)) from err
 
-    def activate_os_update(self, revision, max_boot_failure_count):
+    def activate_os_update(self, revision, max_reboot_failures):
         self.logger.info("Activating OS update")
         if self.is_activating_os_update():
             raise OSTreeError("Cannot activate any new OS update while the activation of some other OS update is still underway")
         if self.is_reverting_os_update():
-            raise OSTreeError("Cannot activate any new OS update while the reversal of some other OS update is still underway")
+            raise OSTreeError("Cannot activate any new OS update while the rollback of some other OS update is still underway")
         if revision == self.get_booted_os_revision():
             raise OSTreeError("Cannot perform OS update towards the same revision that is already in use")
             
         self.__stage_os_update(revision)
         self.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE, '1')
-        self.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_BOOT_FAILURE_CREDIT, str(max_boot_failure_count))
+        self.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT, str(max_reboot_failures))
         self.reboot()
 
     def is_activating_os_update(self):
@@ -90,12 +90,12 @@ class OSUpdater(OSTreeClient, UBootOperator):
             raise OSTreeError("Cannot confirm any OS update when no such has been activated before")
 
         self.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
-        self.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_BOOT_FAILURE_CREDIT)
+        self.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
 
     def revert_os_update(self):
         self.logger.info("Reverting latest OS update")
         self.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
-        self.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_BOOT_FAILURE_CREDIT)
+        self.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
         self.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE, '1')
         self.reboot()
 

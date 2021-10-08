@@ -1,0 +1,10 @@
+[general]
+; Whether to enable verbose output
+verbose = false 
+
+[os]
+; Name of operating system distribution used on this device
+operating.system.distribution.name = fullmetalupdate-os-raspberrypi3
+
+; Command used to validate whether operating system update works as expected
+self.test.command = bash -c "echo 'This OS revision Looks good!'"

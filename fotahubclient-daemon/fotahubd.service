@@ -1,0 +1,10 @@
+[Unit]
+Description = FotaHub Client daemon
+After = network.target
+
+[Service]
+WorkingDirectory = /usr/rootdirs/bin/fotahub/
+ExecStart = /usr/bin/python3 fotahubd.py --config /etc/fotahub/fotahubclient.cfg
+
+[Install]
+WantedBy = multi-user.target
