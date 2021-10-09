@@ -4,7 +4,7 @@ After = network.target
 
 [Service]
 WorkingDirectory = /usr/rootdirs/bin/fotahub/
-ExecStart = /usr/bin/python3 fotahubd.py --config /etc/fotahub/fotahubclient.cfg
+ExecStart = fotahub --config /etc/fotahub/fotahubclient.cfg finish-operating-system-update
 
 [Install]
 WantedBy = multi-user.target

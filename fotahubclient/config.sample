@@ -1,6 +1,8 @@
 [general]
 ; Whether to enable verbose output
 verbose = false 
+; Whether to enable output of stacktrace for exceptions
+stacktrace = false 
 
 [os]
 ; Name of operating system distribution used on this device

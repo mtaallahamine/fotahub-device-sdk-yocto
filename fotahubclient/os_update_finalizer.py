@@ -22,6 +22,8 @@ class OSUpdateFinalizer(object):
                     updater.revert_os_update()
             else:
                 updater.remove_os_update()
+        else:
+            self.logger.info('No OS update in progress, nothing to do')
 
     def run_self_test(self):
         if self.self_test_command is not None:

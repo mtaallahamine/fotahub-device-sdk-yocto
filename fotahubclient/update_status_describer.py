@@ -1,14 +1,9 @@
 from enum import Enum
 import json
-from json import JSONEncoder
-import stringcase
+from datetime import datetime
 
-def to_camelcased_dict(obj):
-    return { stringcase.capitalcase(stringcase.camelcase(k)): v for k, v in obj.__dict__.items() }
-
-class ArtifactKind(Enum):
-    OperatingSystem = 1
-    Application = 2
+from fotahubclient.artifact_describer import ArtifactKind
+from fotahubclient.artifact_describer import ArtifactInfoJSONEncoder
 
 class UpdateStatus(Enum):
     downloaded = 1
@@ -17,59 +12,48 @@ class UpdateStatus(Enum):
     reverted = 4
     failed = 5
 
-class ArtifactInfo(object):
-    def __init__(self, name, kind, current_revision, rollback_revision=None):
-        self.name = name
-        self.kind = kind
-        self.current_revision = current_revision
-        self.rollback_revision = rollback_revision
-
 class UpdateInfo(object):
-    def __init__(self, revision, status, error_message=None):
+
+    def __init__(self, artifact_name, artifact_kind, revision, install_date, status, error_message=None):
+        self.artifact_name = artifact_name
+        self.artifact_kind = artifact_kind
         self.revision = revision
+        self.install_date = install_date
         self.status = status
         self.error_message = error_message
 
-class UpdateStatusInfo(object):
-    def __init__(self, artifact_info, update_info):
-        self.artifact_info = artifact_info
-        self.update_info = update_info
+class UpdateStatuses(object):
 
-class UpdateStatusInfoEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Enum):
-            return obj.name
-        else:
-            return to_camelcased_dict(obj)
+    def __init__(self, update_statuses):
+        self.update_statuses = update_statuses
 
 class UpdateStatusDescriber(object):
 
+    def __init__(self, os_distro_name):
+        self.os_distro_name = os_distro_name
+
+    def describe(self, artifact_names=[]):
+        update_statuses = UpdateStatuses([
+            self.describe_os_update_status(), 
+            self.describe_app_update_status('productid-app-helloworld')
+        ])
+        return json.dumps(update_statuses, indent=4, cls=ArtifactInfoJSONEncoder)
+
     def describe_os_update_status(self):
-        return UpdateStatusInfo(
-            ArtifactInfo(
-                "productid-os-raspberrypi3", 
-                ArtifactKind.OperatingSystem, 
-                'f45e36b91cc08057b80de8de37443c3056dc0433c63c64ce849bc3e76749ea9a', 
-                '664fe8e40f178ccbdb2367e469eb19a9d2fbfe6683f3489e92b7d3aa5def5d44'),
-            UpdateInfo(
-                'f45e36b91cc08057b80de8de37443c3056dc0433c63c64ce849bc3e76749ea9a',
-                UpdateStatus.confirmed
-            )
+        return UpdateInfo(
+            self.os_distro_name, 
+            ArtifactKind.OperatingSystem, 
+            'f45e36b91cc08057b80de8de37443c3056dc0433c63c64ce849bc3e76749ea9a',
+            datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+            UpdateStatus.confirmed
         )
 
     def describe_app_update_status(self, name):
-        return UpdateStatusInfo(
-            ArtifactInfo(
-                name, 
-                ArtifactKind.Application, 
-                'ed2bebe4a350f13d7a5e632cce3198b294b032754ad3cd6923bc7b0d4488144e'),
-            UpdateInfo(
-                '9a4d5186320d06bc5a543f99c9fe631995d6182b151f40d829bfce795e6a2cac',
-                UpdateStatus.failed,
-                "Failed to start 'helloworld' application (exit code: 1)"
-            )
+        return UpdateInfo(
+            name, 
+            ArtifactKind.Application, 
+            '9a4d5186320d06bc5a543f99c9fe631995d6182b151f40d829bfce795e6a2cac',
+            datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+            UpdateStatus.failed,
+            "Failed to start 'helloworld' application (exit code: 1)"
         )
-
-    def describe_update_statuses(self):
-        update_statuses = [self.describe_os_update_status(), self.describe_app_update_status('productid-app-helloworld')]
-        return json.dumps(update_statuses, indent=4, cls=UpdateStatusInfoEncoder)

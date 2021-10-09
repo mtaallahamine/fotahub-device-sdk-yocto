@@ -17,6 +17,8 @@ UBOOT_FLAG_ACTIVATING_OS_UPDATE = 'activating_os_update'
 UBOOT_FLAG_REVERTING_OS_UPDATE = 'reverting_os_update'
 UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT = 'os_update_reboot_failure_credit'
 
+MAX_REBOOT_FAILURES_DEFAULT = 3
+
 class OSUpdater(OSTreeClient, UBootOperator):
 
     def __init__(self):

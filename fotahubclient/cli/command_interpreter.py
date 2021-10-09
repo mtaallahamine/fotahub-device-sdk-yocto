@@ -1,37 +1,74 @@
 import logging
 
 from fotahubclient.os_updater import OSUpdater
+from fotahubclient.os_update_finalizer import OSUpdateFinalizer
 from fotahubclient.update_status_describer import UpdateStatusDescriber
+from fotahubclient.installed_artifacts_describer import InstalledArtifactsDescriber
 
-UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
+START_OPERATING_SYSTEM_UPDATE_CMD = 'start-operating-system-update'
+FINISH_OPERATING_SYSTEM_UPDATE_CMD = 'finish-operating-system-update'
+REVERT_OPERATING_SYSTEM_CMD = 'revert-operating-system'
 UPDATE_APPLICATION_CMD = 'update-application'
+REVERT_APPLICATION_CMD = 'revert-application'
+DESCRIBE_INSTALLED_ARTIFACTS_CMD = 'describe-installed-artifacts'
 DESCRIBE_UPDATE_STATUS_CMD = 'describe-update-status'
 
 class CommandInterpreter(object):
 
-    def __init__(self, distro_name):
+    def __init__(self, os_distro_name, self_test_command):
         self.logger = logging.getLogger()
-        self.distro_name = distro_name
+        self.os_distro_name = os_distro_name
+        self.self_test_command = self_test_command
 
     def run(self, args):
-        if args.command == UPDATE_OPERATING_SYSTEM_CMD:
-            self.update_operating_system(args.revision, args.max_reboot_failures)
+        if args.command == START_OPERATING_SYSTEM_UPDATE_CMD:
+            self.start_operating_system_update(args.revision, args.max_reboot_failures)
+        elif args.command == FINISH_OPERATING_SYSTEM_UPDATE_CMD:
+            self.finish_operating_system_update()
+        elif args.command == REVERT_OPERATING_SYSTEM_CMD:
+            self.revert_operating_system()
         elif args.command == UPDATE_APPLICATION_CMD:
             self.update_application(args.name, args.revision)
+        elif args.command == REVERT_APPLICATION_CMD:
+            self.revert_application(args.name)
+        elif args.command == DESCRIBE_INSTALLED_ARTIFACTS_CMD:
+            self.describe_installed_artifacts(args.artifact_names)
         elif args.command == DESCRIBE_UPDATE_STATUS_CMD:
-            self.describe_update_status()
+            self.describe_update_status(args.artifact_names)
 
-    def update_operating_system(self, revision, max_reboot_failures):
-        self.logger.debug('Updating ' + self.distro_name + ' operating system to revision ' + revision)
+    def start_operating_system_update(self, revision, max_reboot_failures):
+        self.logger.info('Initiating operating system update to revision ' + revision)
+
         updater = OSUpdater()
-        updater.pull_os_update(self.distro_name, revision)
+        updater.pull_os_update(self.os_distro_name, revision)
         updater.activate_os_update(revision, max_reboot_failures)
 
-    def update_application(self, name, revision):
-        self.logger.debug('Updating ' + name + ' application to revision ' + revision)
+    def finish_operating_system_update(self):
+        self.logger.info('Finalizing operating system update')
+
+        finalizer = OSUpdateFinalizer(self.self_test_command)
+        finalizer.run()
+
+    def revert_operating_system(self):
+        self.logger.info('Reverting operating system to previous revision')
         raise ValueError('Not yet implemented')
 
-    def describe_update_status(self):
-        self.logger.debug('Retrieving update status')
-        describer = UpdateStatusDescriber()
-        print(describer.describe_update_statuses())
+    def update_application(self, name, revision):
+        self.logger.info('Updating ' + name + ' application to revision ' + revision)
+        raise ValueError('Not yet implemented')
+
+    def revert_application(self, name):
+        self.logger.info('Reverting ' + name + ' application to previous revision ')
+        raise ValueError('Not yet implemented')
+
+    def describe_installed_artifacts(self, artifact_names=[]):
+        self.logger.info('Retrieving installed artifacts')
+
+        describer = InstalledArtifactsDescriber(self.os_distro_name)
+        print(describer.describe(artifact_names))
+
+    def describe_update_status(self, artifact_names=[]):
+        self.logger.info('Retrieving update status')
+
+        describer = UpdateStatusDescriber(self.os_distro_name)
+        print(describer.describe(artifact_names))
