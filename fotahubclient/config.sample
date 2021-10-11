@@ -1,4 +1,7 @@
 [general]
+; Whether to enable GPG verification when pulling updates for operating system or applications
+gpg.verify = false
+
 ; Where to store status information about latest operating system and application updates
 update.status.path = /var/log/fotahub/updatestatus.json
 

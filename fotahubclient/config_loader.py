@@ -1,5 +1,4 @@
 from pathlib import Path
-from distutils.util import strtobool
 from configparser import ConfigParser
 
 CONFIG_PATH_DEFAULT = '/etc/fotahub/fotahub.config'
@@ -11,6 +10,8 @@ class ConfigLoader(object):
         self.config_path = config_path
         self.update_status_path = update_status_path
         
+        self.gpg_verify = False
+        
         self.verbose = verbose
         self.stacktrace = stacktrace
 
@@ -21,17 +22,20 @@ class ConfigLoader(object):
         config_path = Path(self.config_path)
         if not config_path.is_file():
             raise FileNotFoundError("FotaHub client configuration file '{}' does not exist".format(config_path))
-        parser = ConfigParser()
-        parser.read_file(config_path.open())
+        config = ConfigParser()
+        config.read(config_path)
 
-        self.update_status_path = parser.get('general', 'updates.status.path', fallback=UPDATE_STATUS_PATH_DEFAULT)
+        if config['general'].getboolean('gpg.verify', fallback=False):
+            self.gpg_verify = True
 
-        if strtobool(parser.get('general', 'verbose')): 
+        self.update_status_path = config.get('general', 'updates.status.path', fallback=UPDATE_STATUS_PATH_DEFAULT)
+
+        if config['general'].getboolean('verbose', fallback=False):
             self.verbose = True
-        if strtobool(parser.get('general', 'stacktrace')): 
+        if config['general'].getboolean('stacktrace', fallback=False):
             self.stacktrace = True
 
-        self.os_distro_name = parser.get('os', 'os.distro.name', fallback='os')
-        self.self_test_command = parser.get('os', 'self.test.command')
+        self.os_distro_name = config['os'].get('os.distro.name', fallback='os')
+        self.self_test_command = config['os'].get('self.test.command')
 
-        self.app_ostree_home = parser.get('app', 'app.ostree.home')
+        self.app_ostree_home = config['app'].get('app.ostree.home')

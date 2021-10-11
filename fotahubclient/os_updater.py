@@ -19,16 +19,17 @@ MAX_REBOOT_FAILURES_DEFAULT = 3
 
 class OSUpdater(OSTreeRepo, UBootOperator):
 
-    def __init__(self, distro_name):
+    def __init__(self, distro_name, gpg_verify):
         super(OSUpdater, self).__init__()
         self.distro_name = distro_name
+        self.gpg_verify = gpg_verify
 
         self.sysroot = None
 
         self.__open_ostree_repo()
 
         if not self.has_ostree_remote(constants.OSTREE_REMOTE_NAME):
-            self.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, constants.OSTREE_REMOTE_GPG_VERIFY)
+            self.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, self.gpg_verify)
     
     def __open_ostree_repo(self):
         try:

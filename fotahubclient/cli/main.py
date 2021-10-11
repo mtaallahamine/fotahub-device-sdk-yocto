@@ -14,7 +14,7 @@ def main():
         cli = CLI()
         args = cli.parse_args()
         
-        config = ConfigLoader(args.config_path, args.verbose, args.stacktrace)
+        config = ConfigLoader(config_path=args.config_path, verbose=args.verbose, stacktrace=args.stacktrace)
         config.load()
 
         log_level = logging.INFO if config.verbose else logging.WARNING
@@ -24,10 +24,8 @@ def main():
         command_interpreter.run(args)
     except Exception as err:
         if config.stacktrace:
-            print('')
             print(''.join(traceback.format_exception(type(err), err, err.__traceback__)), file=sys.stderr)
         else:
-            print('')
             print('ERROR: ' + str(err), file=sys.stderr)
         sys.exit(1)
 

@@ -1,5 +1,4 @@
 OSTREE_REMOTE_NAME = 'fotahub'
 OSTREE_REMOTE_URL = 'https://ostree.fotahub.com'
 
-OSTREE_REMOTE_GPG_VERIFY = False
 OSTREE_PULL_DEPTH = 1
