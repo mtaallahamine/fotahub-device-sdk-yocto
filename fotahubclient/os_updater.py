@@ -1,17 +1,15 @@
+import subprocess
+
 import gi
 gi.require_version("OSTree", "1.0")
-
-from pydbus import SystemBus
 from gi.repository import OSTree, GLib
-import subprocess
-from fotahubclient.ostree_client import OSTreeClient
-from fotahubclient.ostree_client import OSTreeError
+
+import fotahubclient.common_constants as constants
+from fotahubclient.ostree_repo import OSTreeRepo
+from fotahubclient.ostree_repo import OSTreeError
 from fotahubclient.uboot_operator import UBootOperator
 
-OSTREE_REMOTE_NAME = 'fotahub'
-OSTREE_REMOTE_URL = 'https://ostree.fotahub.com'
-OSTREE_REMOTE_GPG_VERIFY = False
-OSTREE_PULL_DEPTH = 1
+OSTREE_SYSTEM_REPOSITORY_PATH = '/ostree/repo'
 
 UBOOT_FLAG_ACTIVATING_OS_UPDATE = 'activating_os_update'
 UBOOT_FLAG_REVERTING_OS_UPDATE = 'reverting_os_update'
@@ -19,31 +17,40 @@ UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT = 'os_update_reboot_failure_credit'
 
 MAX_REBOOT_FAILURES_DEFAULT = 3
 
-class OSUpdater(OSTreeClient, UBootOperator):
+class OSUpdater(OSTreeRepo, UBootOperator):
 
-    def __init__(self):
+    def __init__(self, distro_name):
         super(OSUpdater, self).__init__()
+        self.distro_name = distro_name
 
         self.sysroot = None
 
         self.__open_ostree_repo()
 
-        if not self.has_ostree_remote(OSTREE_REMOTE_NAME):
-            self.add_ostree_remote(OSTREE_REMOTE_NAME, OSTREE_REMOTE_URL, OSTREE_REMOTE_GPG_VERIFY)
+        if not self.has_ostree_remote(constants.OSTREE_REMOTE_NAME):
+            self.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, constants.OSTREE_REMOTE_GPG_VERIFY)
     
     def __open_ostree_repo(self):
-        self.sysroot = OSTree.Sysroot.new_default()
-        self.sysroot.load(None)
-        self.sysroot.cleanup(None)
+        try:
+            self.sysroot = OSTree.Sysroot.new_default()
+            self.logger.info("Opening OS OSTree repo located at '{}'".format(OSTREE_SYSTEM_REPOSITORY_PATH))
+            self.sysroot.load(None)
+            self.sysroot.cleanup(None)
 
-        [_, repo] = self.sysroot.get_repo()
-        self.ostree_repo = repo
+            [_, repo] = self.sysroot.get_repo()
+            self.ostree_repo = repo
+        except GLib.Error as err:
+            raise OSTreeError('Failed to open OS OSTree repo') from err
 
-    def get_booted_os_revision(self):
+    def get_installed_os_revision(self):
         return self.sysroot.get_booted_deployment().get_csum()
+
+    def get_rollback_os_revision(self):
+        [_, rollback] = self.sysroot.query_deployments_for(None)
+        return rollback.get_csum()
         
-    def pull_os_update(self, distro_name, revision):
-        self.pull_ostree_revision(OSTREE_REMOTE_NAME, distro_name, revision, OSTREE_PULL_DEPTH)
+    def pull_os_update(self, revision):
+        self.pull_ostree_revision(constants.OSTREE_REMOTE_NAME, self.distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
         self.logger.info(
@@ -74,7 +81,7 @@ class OSUpdater(OSTreeClient, UBootOperator):
             raise OSTreeError("Cannot activate any new OS update while the activation of some other OS update is still underway")
         if self.is_reverting_os_update():
             raise OSTreeError("Cannot activate any new OS update while the rollback of some other OS update is still underway")
-        if revision == self.get_booted_os_revision():
+        if revision == self.get_installed_os_revision():
             raise OSTreeError("Cannot perform OS update towards the same revision that is already in use")
             
         self.__stage_os_update(revision)

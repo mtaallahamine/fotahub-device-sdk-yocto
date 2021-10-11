@@ -9,7 +9,7 @@ class ArtifactKind(Enum):
 def to_pascalcase_keyed_dict(obj):
     return { stringcase.pascalcase(k): v for k, v in obj.__dict__.items() }
 
-class ArtifactInfoJSONEncoder(JSONEncoder):
+class PascalCaseJSONEncoder(JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, Enum):

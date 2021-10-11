@@ -15,10 +15,9 @@ DESCRIBE_UPDATE_STATUS_CMD = 'describe-update-status'
 
 class CommandInterpreter(object):
 
-    def __init__(self, os_distro_name, self_test_command):
+    def __init__(self, config):
         self.logger = logging.getLogger()
-        self.os_distro_name = os_distro_name
-        self.self_test_command = self_test_command
+        self.config = config
 
     def run(self, args):
         if args.command == START_OPERATING_SYSTEM_UPDATE_CMD:
@@ -39,14 +38,14 @@ class CommandInterpreter(object):
     def start_operating_system_update(self, revision, max_reboot_failures):
         self.logger.info('Initiating operating system update to revision ' + revision)
 
-        updater = OSUpdater()
-        updater.pull_os_update(self.os_distro_name, revision)
+        updater = OSUpdater(self.config.os_distro_name)
+        updater.pull_os_update(revision)
         updater.activate_os_update(revision, max_reboot_failures)
 
     def finish_operating_system_update(self):
         self.logger.info('Finalizing operating system update')
 
-        finalizer = OSUpdateFinalizer(self.self_test_command)
+        finalizer = OSUpdateFinalizer(self.config)
         finalizer.run()
 
     def revert_operating_system(self):
@@ -64,11 +63,11 @@ class CommandInterpreter(object):
     def describe_installed_artifacts(self, artifact_names=[]):
         self.logger.info('Retrieving installed artifacts')
 
-        describer = InstalledArtifactsDescriber(self.os_distro_name)
+        describer = InstalledArtifactsDescriber(self.config)
         print(describer.describe(artifact_names))
 
     def describe_update_status(self, artifact_names=[]):
         self.logger.info('Retrieving update status')
 
-        describer = UpdateStatusDescriber(self.os_distro_name)
+        describer = UpdateStatusDescriber(self.config)
         print(describer.describe(artifact_names))

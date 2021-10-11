@@ -2,8 +2,8 @@ from enum import Enum
 import json
 from datetime import datetime
 
-from fotahubclient.artifact_describer import ArtifactKind
-from fotahubclient.artifact_describer import ArtifactInfoJSONEncoder
+from fotahubclient.base_describer import ArtifactKind
+from fotahubclient.base_describer import PascalCaseJSONEncoder
 
 class UpdateStatus(Enum):
     downloaded = 1
@@ -29,19 +29,19 @@ class UpdateStatuses(object):
 
 class UpdateStatusDescriber(object):
 
-    def __init__(self, os_distro_name):
-        self.os_distro_name = os_distro_name
+    def __init__(self, config):
+        self.config = config
 
     def describe(self, artifact_names=[]):
         update_statuses = UpdateStatuses([
             self.describe_os_update_status(), 
             self.describe_app_update_status('productid-app-helloworld')
         ])
-        return json.dumps(update_statuses, indent=4, cls=ArtifactInfoJSONEncoder)
+        return json.dumps(update_statuses, indent=4, cls=PascalCaseJSONEncoder)
 
     def describe_os_update_status(self):
         return UpdateInfo(
-            self.os_distro_name, 
+            self.config.os_distro_name, 
             ArtifactKind.OperatingSystem, 
             'f45e36b91cc08057b80de8de37443c3056dc0433c63c64ce849bc3e76749ea9a',
             datetime.today().strftime('%Y-%m-%d %H:%M:%S'),

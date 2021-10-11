@@ -1,7 +1,10 @@
+from functools import update_wrapper
 import json
+from fotahubclient.app_updater import AppUpdater
 
-from fotahubclient.artifact_describer import ArtifactKind
-from fotahubclient.artifact_describer import ArtifactInfoJSONEncoder
+from fotahubclient.base_describer import ArtifactKind
+from fotahubclient.base_describer import PascalCaseJSONEncoder
+from fotahubclient.os_updater import OSUpdater
 
 class InstalledArtifactInfo(object):
 
@@ -18,27 +21,32 @@ class InstalledArtifacts(object):
 
 class InstalledArtifactsDescriber(object):
 
-    def __init__(self, os_distro_name):
-        self.os_distro_name = os_distro_name
+    def __init__(self, config):
+        self.config = config
 
     def describe(self, artifact_names=[]):
         installed_artifacts = InstalledArtifacts([
-            self.describe_installed_os(), 
-            self.describe_installed_app('productid-app-helloworld')
+            [self.describe_installed_os()] if self.config.os_distro_name in artifact_names else [] +
+            self.describe_installed_apps(artifact_names)
         ])
-        return json.dumps(installed_artifacts, indent=4, cls=ArtifactInfoJSONEncoder)
+        return json.dumps(installed_artifacts, indent=4, cls=PascalCaseJSONEncoder)
 
     def describe_installed_os(self):
+        os_updater = OSUpdater(self.config.os_distro_name)
         return InstalledArtifactInfo(
-            self.os_distro_name, 
+            os_updater.os_distro_name, 
             ArtifactKind.OperatingSystem, 
-            'f45e36b91cc08057b80de8de37443c3056dc0433c63c64ce849bc3e76749ea9a',
-            '664fe8e40f178ccbdb2367e469eb19a9d2fbfe6683f3489e92b7d3aa5def5d44'
+            os_updater.get_installed_os_revision(),
+            os_updater.get_rollback_os_revision()
         )
 
-    def describe_installed_app(self, name):
-        return InstalledArtifactInfo(
-            name, 
-            ArtifactKind.Application, 
-            'ed2bebe4a350f13d7a5e632cce3198b294b032754ad3cd6923bc7b0d4488144e'
-        )
+    def describe_installed_apps(self, artifact_names=[]):
+        app_updater = AppUpdater(self.config.app_ostree_home)
+        return [
+            InstalledArtifactInfo(
+                name, 
+                ArtifactKind.Application, 
+                app_updater.resolve_installed_revision(name)
+                # TODO Add rollback revision
+            ) 
+            for name in app_updater.list_app_names() if name in artifact_names]

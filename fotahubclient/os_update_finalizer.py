@@ -6,13 +6,13 @@ from fotahubclient.os_updater import OSUpdater
 
 class OSUpdateFinalizer(object):
 
-    def __init__(self, self_test_command=None):
+    def __init__(self, config):
         self.logger = logging.getLogger()
-        self.self_test_command = self_test_command
+        self.config = config
 
     def run(self):
-        updater = OSUpdater()
-        self.logger.info("Booted OS revision: {}".format(updater.get_booted_os_revision()))
+        updater = OSUpdater(self.config.os_distro_name)
+        self.logger.info("Booted OS revision: {}".format(updater.get_installed_os_revision()))
         
         if updater.is_activating_os_update():
             if not updater.is_reverting_os_update():

@@ -1,12 +1,20 @@
 [general]
+; Where to store status information about latest operating system and application updates
+update.status.path = /var/log/fotahub/updatestatus.json
+
 ; Whether to enable verbose output
 verbose = false 
+
 ; Whether to enable output of stacktrace for exceptions
 stacktrace = false 
 
 [os]
 ; Name of operating system distribution used on this device
-operating.system.distribution.name = fullmetalupdate-os-raspberrypi3
+os.distro.name = fullmetalupdate-os-raspberrypi3
 
 ; Command used to validate whether operating system update works as expected
 self.test.command = bash -c "echo 'This OS revision Looks good!'"
+
+[app]
+; Home location of application OSTree repository
+app.ostree.home = /apps/ostree_repo

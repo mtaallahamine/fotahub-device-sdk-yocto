@@ -1,13 +1,13 @@
+import logging
+
 import gi
 gi.require_version("OSTree", "1.0")
-
-import logging
 from gi.repository import OSTree, GLib
 
 class OSTreeError(Exception):
     pass
 
-class OSTreeClient(object):
+class OSTreeRepo(object):
 
     def __init__(self):
         self.logger = logging.getLogger()
@@ -29,6 +29,14 @@ class OSTreeClient(object):
         except GLib.Error as err:
             raise OSTreeError("Failed to add remote '{}' to local OSTree repo".format(
                 name)) from err
+
+    def list_ostree_refs(self):
+        [_, refs] = self.ostree_repo.list_refs(None, None)
+        return [k.split(':')[0]  for  k in  refs]
+
+    def resolve_ostree_revision(self, ref):
+        [_, revision] = self.ostree_repo.resolve_rev(ref + ':' + ref, False)
+        return revision
 
     def pull_ostree_revision(self, remote_name, branch_name, revision, depth):
         self.logger.info(
