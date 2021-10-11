@@ -12,7 +12,7 @@ class CLI(object):
 
     def __init__(self):
         
-        self.cli_parser = argparse.ArgumentParser(os.path.basename(sys.argv[0]), description='Manage updates of operating system or selected applications on Linux-based IoT edge devices.', formatter_class=CommandHelpFormatter)
+        self.cli_parser = argparse.ArgumentParser(os.path.basename(sys.argv[0]), description='Update operating system or selected applications on Linux-based IoT edge devices over-the-air.', formatter_class=CommandHelpFormatter)
         set_command_parser_titles(self.cli_parser)
         self.cli_parser.add_argument('-c', '--config', dest='config_path', default=config_loader.CONFIG_PATH_DEFAULT, help='path to configuration file (optional, defaults to ' + config_loader.CONFIG_PATH_DEFAULT + ')')
         self.cli_parser.add_argument('-v', '--verbose', action='store_true', default=False, help='enable verbose output (optional, disabled by default)')
