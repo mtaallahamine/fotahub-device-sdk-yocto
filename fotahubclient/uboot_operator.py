@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import re
 
@@ -8,6 +9,9 @@ class UBootError(Exception):
     pass
 
 class UBootOperator(object):
+    
+    def __init__(self):
+        self.logger = logging.getLogger()
 
     def set_uboot_env_var(self, name, value=None):
         if value != None:

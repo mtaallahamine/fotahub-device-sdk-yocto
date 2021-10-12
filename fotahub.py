@@ -5,4 +5,5 @@ if sys.version_info[0] < 3:
 
 import fotahubclient.cli.main as fotahub
 
-fotahub.main()
+if __name__ == '__main__': 
+    sys.exit(fotahub.main()) 

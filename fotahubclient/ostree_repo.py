@@ -9,26 +9,27 @@ class OSTreeError(Exception):
 
 class OSTreeRepo(object):
 
-    def __init__(self):
+    def __init__(self, repo):
         self.logger = logging.getLogger()
-
-        self.ostree_repo = None
+        
+        self.ostree_repo = repo
 
     def has_ostree_remote(self, name):
         return name in self.ostree_repo.remote_list()
 
-    def add_ostree_remote(self, name, url, gpg_verify):
-        self.logger.info(
-            "Adding remote '{}' for {} to local OSTree repo".format(name, url))
+    def add_ostree_remote(self, name, url, gpg_verify, force=False):
+        if not self.has_ostree_remote(name) or force:
+            self.logger.info(
+                "Adding remote '{}' for {} to local OSTree repo".format(name, url))
 
-        try:
-            opts = GLib.Variant(
-                'a{sv}', {'gpg-verify': GLib.Variant('b', gpg_verify)})
-            self.ostree_repo.remote_add(
-                name, url, opts, None)
-        except GLib.Error as err:
-            raise OSTreeError("Failed to add remote '{}' to local OSTree repo".format(
-                name)) from err
+            try:
+                opts = GLib.Variant(
+                    'a{sv}', {'gpg-verify': GLib.Variant('b', gpg_verify)})
+                self.ostree_repo.remote_add(
+                    name, url, opts, None)
+            except GLib.Error as err:
+                raise OSTreeError("Failed to add remote '{}' to local OSTree repo".format(
+                    name)) from err
 
     def list_ostree_refs(self):
         [_, refs] = self.ostree_repo.list_refs(None, None)
