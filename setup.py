@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 
-# Prerequisites: sudo apt-get install pkg-config libcairo2-dev gcc python3-dev libgirepository1.0-dev
+# Prerequisites: 
+# sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -21,9 +22,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'gobject',
-        'PyGObject',
+        'pycairo',
         'pydbus',
+        'PyGObject',
         'stringcase',
     ],
     entry_points='''
