@@ -2,8 +2,6 @@
 
 create_yocto_project_layout()
 {
-  local MACHINE="$1"
-
   # Locate Yocto project
   if [ -z "$YOCTO_PROJECT_DIR" ]; then
     export YOCTO_PROJECT_DIR=$PWD
@@ -66,6 +64,35 @@ sync_yocto_layers()
   cd $CURRENT_DIR
 }
 
+detect_machine()
+{
+  sed -n "s/^MACHINE\s*??=\s*'\(.*\)'/\1/p" < $YOCTO_BUILD_DIR/conf/local.conf
+}
+
+show_latest_os_revision()
+{
+  local MACHINE=$1
+  
+  echo "Latest OS revision: $(ostree --repo=tmp/fullmetalupdate-os/deploy/images/$MACHINE/ostree_repo rev-parse fullmetalupdate-os-$MACHINE)"
+}
+
+show_latest_app_revision()
+{
+  local MACHINE=$1
+  local APP=$2
+
+  echo "Latest '$APP' revision: $(ostree --repo=tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers rev-parse $APP)"
+}
+
+show_latest_app_revisions()
+{
+  local MACHINE=$1
+
+  for REF in $(ostree --repo=tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers refs); do 
+    show_latest_app_revision $MACHINE $REF
+  done
+}
+
 show_usage()
 {
   cat << EOF
@@ -103,9 +130,9 @@ main()
     exit 1
   fi
   local COMMAND="$1"
-  local MACHINE="$2"
+  shift; set -- "$@"
 
-  if ! create_yocto_project_layout $MACHINE; then
+  if ! create_yocto_project_layout; then
     exit 1
   fi
 
@@ -116,11 +143,11 @@ main()
 
   case "$COMMAND" in
     sync)
-      shift; set -- "$@"
       if [ $# -ne 1 ]; then
         echo "ERROR: The "$COMMAND" command requires exactly 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
+      local MACHINE=$1
 
       if ! sync_yocto_layers "$YOCTO_LAYER_MANIFEST_FILE" "$YOCTO_SOURCES_DIR"; then
         exit 1
@@ -133,35 +160,62 @@ main()
       ;;
 
     all)
-      cd "${YOCTO_DATA_DIR}"
+      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
-      if [ ! -d "${YOCTO_BUILD_DIR}/tmp/fullmetalupdate-containers/deploy/containers" ]; then
+      local MACHINE=$(detect_machine)
+
+      if [ ! -d "$YOCTO_BUILD_DIR/tmp/fullmetalupdate-containers/deploy/containers" ]; then
         DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
       fi
       DISTRO=fullmetalupdate-os bitbake fullmetalupdate-os-package -k
+      
+      show_latest_os_revision "$MACHINE"
+      show_latest_app_revisions "$MACHINE"
       ;;
 
     all-apps)
-      cd "${YOCTO_DATA_DIR}"
+      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
       DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
+
+      show_latest_app_revisions "$MACHINE"
       ;;
 
     app)
-      shift; set -- "$@"
       if [ $# -ne 1 ]; then
         echo "ERROR: The "$COMMAND" command requires exactly 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
+      local APP=$1
 
-      cd "${YOCTO_DATA_DIR}"
+      cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
-      DISTRO=fullmetalupdate-containers bitbake $1 -f -k
+      local MACHINE=$(detect_machine)
+
+      DISTRO=fullmetalupdate-containers bitbake $APP -f -k
+      
+      show_latest_app_revision "$MACHINE" "$APP"
+      ;;
+
+    show-revisions)
+      local MACHINE=$(detect_machine)
+
+      show_latest_os_revision "$MACHINE"
+      show_latest_app_revisions "$MACHINE"
       ;;
   
     bash)
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
+      # Sym-link Yocto project build script into Yocto build directory
+      if [ ! -f "$YOCTO_BUILD_DIR/$(basename $0)" ]; then
+        ln -s $0 $(basename $0)
+      fi
+
       bash
       ;;
 

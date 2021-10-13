@@ -20,11 +20,10 @@ MAX_REBOOT_FAILURES_DEFAULT = 3
 
 class OSUpdater(object):
 
-    def __init__(self, distro_name, gpg_verify):
-        super(OSUpdater, self).__init__()
+    def __init__(self, os_distro_name, gpg_verify):
         self.logger = logging.getLogger()
 
-        self.distro_name = distro_name
+        self.os_distro_name = os_distro_name
         self.gpg_verify = gpg_verify
 
         [sysroot, repo] = self.__open_ostree_repo()
@@ -41,7 +40,7 @@ class OSUpdater(object):
             self.logger.info("Opening OS OSTree repo located at '{}'".format(OSTREE_SYSTEM_REPOSITORY_PATH))
             sysroot.load(None)
             sysroot.cleanup(None)
-            [_, repo] = self.sysroot.get_repo()
+            [_, repo] = sysroot.get_repo()
 
             return [sysroot, repo]
         except GLib.Error as err:
@@ -50,19 +49,24 @@ class OSUpdater(object):
     def get_installed_os_revision(self):
         return self.sysroot.get_booted_deployment().get_csum()
 
+    def has_rollback_os_revision(self):
+        return self.get_rollback_os_revision() is not None
+
     def get_rollback_os_revision(self):
         [_, rollback] = self.sysroot.query_deployments_for(None)
+        if rollback is None:
+            return None
         return rollback.get_csum()
         
     def pull_os_update(self, revision):
-        self.ostree_repo.pull_ostree_revision(constants.OSTREE_REMOTE_NAME, self.distro_name, revision, constants.OSTREE_PULL_DEPTH)
+        self.ostree_repo.pull_ostree_revision(constants.OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
         self.logger.info(
             "Staging OS update with revision '{}'".format(revision))
         [pending, _] = self.sysroot.query_deployments_for(None)
         if pending is not None:
-            raise OSTreeError("Cannot stage any new OS update while some other OS update is still pending")
+            raise OSTreeError("Cannot stage any new OS update when some other OS update is still pending")
 
         try:
             booted_deployment = self.sysroot.get_booted_deployment()
@@ -82,44 +86,45 @@ class OSUpdater(object):
     def activate_os_update(self, revision, max_reboot_failures):
         self.logger.info("Activating OS update")
         if self.is_activating_os_update():
-            raise OSTreeError("Cannot activate any new OS update while the activation of some other OS update is still underway")
+            raise OSTreeError("Cannot activate any new OS update when the activation of some other OS update is still underway")
         if self.is_reverting_os_update():
-            raise OSTreeError("Cannot activate any new OS update while the rollback of some other OS update is still underway")
+            raise OSTreeError("Cannot activate any new OS update when the rollback of some other OS update is still underway")
         if revision == self.get_installed_os_revision():
-            raise OSTreeError("Cannot perform OS update towards the same revision that is already in use")
+            raise OSTreeError("Cannot update OS towards the same revision that is already in use")
             
         self.__stage_os_update(revision)
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE, '1')
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT, str(max_reboot_failures))
-        self.reboot()
+        self.uboot.reboot()
 
     def is_activating_os_update(self):
-        self.logger.info("Checking if an OS update is about to be activated")
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
 
     def confirm_os_update(self):
-        self.logger.info("Confirming activated OS update")
+        self.logger.info("Confirming OS update")
         if not self.is_activating_os_update():
-            raise OSTreeError("Cannot confirm any OS update when no such has been activated before")
+            raise OSTreeError("Cannot confirm OS update before any such has been activated")
 
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
 
     def revert_os_update(self):
         self.logger.info("Reverting latest OS update")
+        if not self.has_rollback_os_revision():
+            raise OSTreeError("Cannot revert OS update before any such has been installed")
+
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE, '1')
         self.uboot.reboot()
 
     def is_reverting_os_update(self):
-        self.logger.info("Checking if OS update is about to be reverted")
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
 
-    def remove_os_update(self):
-        self.logger.info("Removing latest OS update")
+    def clean_os_update(self):
+        self.logger.info("Cleaning reverted OS update")
         if not self.is_reverting_os_update():
-            raise OSTreeError("Cannot remove any OS update when no such has been reverted before")
+            raise OSTreeError("Cannot clean OS update before any such has been reverted")
         
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
         try:
@@ -129,4 +134,4 @@ class OSUpdater(object):
                 # TODO Reimplement this behavior using OSTree API (see https://github.com/ostreedev/ostree/blob/8cb5d920c4b89d17c196f30f2c59fcbd4c762a17/src/ostree/ot-admin-builtin-undeploy.c#L59)
                 subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)
         except subprocess.CalledProcessError as err:
-            raise OSTreeError("Failed to undeploy reverted OS update") from err
+            raise OSTreeError("Failed to clean reverted OS update") from err

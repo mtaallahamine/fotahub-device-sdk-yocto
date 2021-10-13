@@ -5,9 +5,9 @@ from fotahubclient.os_update_finalizer import OSUpdateFinalizer
 from fotahubclient.update_status_describer import UpdateStatusDescriber
 from fotahubclient.installed_artifacts_describer import InstalledArtifactsDescriber
 
-START_OPERATING_SYSTEM_UPDATE_CMD = 'start-operating-system-update'
-FINISH_OPERATING_SYSTEM_UPDATE_CMD = 'finish-operating-system-update'
+UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
 REVERT_OPERATING_SYSTEM_CMD = 'revert-operating-system'
+FINISH_OPERATING_SYSTEM_CHANGE_CMD = 'finish-operating-system-change'
 UPDATE_APPLICATION_CMD = 'update-application'
 REVERT_APPLICATION_CMD = 'revert-application'
 DESCRIBE_INSTALLED_ARTIFACTS_CMD = 'describe-installed-artifacts'
@@ -20,12 +20,12 @@ class CommandInterpreter(object):
         self.config = config
 
     def run(self, args):
-        if args.command == START_OPERATING_SYSTEM_UPDATE_CMD:
-            self.start_operating_system_update(args.revision, args.max_reboot_failures)
-        elif args.command == FINISH_OPERATING_SYSTEM_UPDATE_CMD:
-            self.finish_operating_system_update()
+        if args.command == UPDATE_OPERATING_SYSTEM_CMD:
+            self.update_operating_system(args.revision, args.max_reboot_failures)
         elif args.command == REVERT_OPERATING_SYSTEM_CMD:
             self.revert_operating_system()
+        elif args.command == FINISH_OPERATING_SYSTEM_CHANGE_CMD:
+            self.finish_operating_system_change()
         elif args.command == UPDATE_APPLICATION_CMD:
             self.update_application(args.name, args.revision)
         elif args.command == REVERT_APPLICATION_CMD:
@@ -35,22 +35,23 @@ class CommandInterpreter(object):
         elif args.command == DESCRIBE_UPDATE_STATUS_CMD:
             self.describe_update_status(args.artifact_names)
 
-    def start_operating_system_update(self, revision, max_reboot_failures):
-        self.logger.info('Initiating operating system update to revision ' + revision)
+    def update_operating_system(self, revision, max_reboot_failures):
+        self.logger.info('Initiating OS update to revision ' + revision)
 
-        updater = OSUpdater(self.config.os_distro_name)
+        updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
         updater.pull_os_update(revision)
         updater.activate_os_update(revision, max_reboot_failures)
 
-    def finish_operating_system_update(self):
-        self.logger.info('Finalizing operating system update')
+    def revert_operating_system(self):
+        self.logger.info('Reverting OS to previous revision')
+        updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+        updater.revert_os_update()
+
+    def finish_operating_system_change(self):
+        self.logger.info('Finalizing OS change')
 
         finalizer = OSUpdateFinalizer(self.config)
         finalizer.run()
-
-    def revert_operating_system(self):
-        self.logger.info('Reverting operating system to previous revision')
-        raise ValueError('Not yet implemented')
 
     def update_application(self, name, revision):
         self.logger.info('Updating ' + name + ' application to revision ' + revision)

@@ -25,14 +25,14 @@ class InstalledArtifactsDescriber(object):
         self.config = config
 
     def describe(self, artifact_names=[]):
-        installed_artifacts = InstalledArtifacts([
-            [self.describe_installed_os()] if self.config.os_distro_name in artifact_names else [] +
+        installed_artifacts = InstalledArtifacts(
+            ([self.describe_installed_os()] if not artifact_names or self.config.os_distro_name in artifact_names else []) +
             self.describe_installed_apps(artifact_names)
-        ])
+        )
         return json.dumps(installed_artifacts, indent=4, cls=PascalCaseJSONEncoder)
 
     def describe_installed_os(self):
-        os_updater = OSUpdater(self.config.os_distro_name)
+        os_updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
         return InstalledArtifactInfo(
             os_updater.os_distro_name, 
             ArtifactKind.OperatingSystem, 
@@ -41,7 +41,7 @@ class InstalledArtifactsDescriber(object):
         )
 
     def describe_installed_apps(self, artifact_names=[]):
-        app_updater = AppUpdater(self.config.app_ostree_home)
+        app_updater = AppUpdater(self.config.app_ostree_home, self.config.gpg_verify)
         return [
             InstalledArtifactInfo(
                 name, 
@@ -49,4 +49,4 @@ class InstalledArtifactsDescriber(object):
                 app_updater.resolve_installed_revision(name)
                 # TODO Add rollback revision
             ) 
-            for name in app_updater.list_app_names() if name in artifact_names]
+            for name in app_updater.list_app_names() if not artifact_names or name in artifact_names]

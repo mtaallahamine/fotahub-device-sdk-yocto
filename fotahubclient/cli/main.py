@@ -10,6 +10,7 @@ LOG_MESSAGE_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def main():
+    config = None
     try:
         cli = CLI()
         args = cli.parse_args()
@@ -23,7 +24,7 @@ def main():
         command_interpreter = CommandInterpreter(config)
         command_interpreter.run(args)
     except Exception as err:
-        if config.stacktrace:
+        if config is not None and config.stacktrace:
             print(''.join(traceback.format_exception(type(err), err, err.__traceback__)), file=sys.stderr)
         else:
             print('ERROR: ' + str(err), file=sys.stderr)

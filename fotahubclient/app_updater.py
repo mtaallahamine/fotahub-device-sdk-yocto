@@ -13,10 +13,9 @@ from fotahubclient.ostree_repo import OSTreeError
 
 MAX_REBOOT_FAILURES_DEFAULT = 3
 
-class AppUpdater(OSTreeRepo):
+class AppUpdater(object):
 
     def __init__(self, repo_path, gpg_verify):
-        super(AppUpdater, self).__init__()
         self.logger = logging.getLogger()
 
         self.gpg_verify = gpg_verify

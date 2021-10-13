@@ -28,8 +28,6 @@ class UBootOperator(object):
             raise UBootError("Failed to change U-Boot environment variable '{}'".format(name)) from err
 
     def isset_uboot_env_var(self, name):
-        self.logger.debug("Checking if U-Boot environment variable '{}' is set".format(name))
-
         try:
             cmd = [UBOOT_PRINTENV_TOOL]
             process = subprocess.run(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)

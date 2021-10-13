@@ -1,12 +1,15 @@
-from pathlib import Path
+import os
+import configparser
 from configparser import ConfigParser
 
-CONFIG_PATH_DEFAULT = '/etc/fotahub/fotahub.config'
 UPDATE_STATUS_PATH_DEFAULT = '/var/log/fotahub/updatestatus.json'
+
+SYSTEM_CONFIG_PATH = '/etc/fotahub/fotahub.config'
+USER_CONFIG_FILE_NAME = '.fotahub'
 
 class ConfigLoader(object):
     
-    def __init__(self, config_path=CONFIG_PATH_DEFAULT, update_status_path=UPDATE_STATUS_PATH_DEFAULT, verbose=False, stacktrace=False):
+    def __init__(self, config_path=SYSTEM_CONFIG_PATH, update_status_path=UPDATE_STATUS_PATH_DEFAULT, verbose=False, stacktrace=False):
         self.config_path = config_path
         self.update_status_path = update_status_path
         
@@ -19,23 +22,31 @@ class ConfigLoader(object):
         self.self_test_command = None
 
     def load(self):
-        config_path = Path(self.config_path)
-        if not config_path.is_file():
-            raise FileNotFoundError("FotaHub client configuration file '{}' does not exist".format(config_path))
-        config = ConfigParser()
-        config.read(config_path)
+        user_config_path = os.path.expanduser("~") + '/' + USER_CONFIG_FILE_NAME
+        if os.path.isfile(user_config_path):
+            self.config_path = user_config_path
+        if not os.path.isfile(self.config_path):
+            raise FileNotFoundError("No FotaHub client configuration file found in any of the following locations:\n{}\n{}".format(user_config_path, self.config_path))
 
-        if config['general'].getboolean('gpg.verify', fallback=False):
-            self.gpg_verify = True
+        try:
+            config = ConfigParser()
+            config.read(self.config_path)
 
-        self.update_status_path = config.get('general', 'updates.status.path', fallback=UPDATE_STATUS_PATH_DEFAULT)
+            if config.getboolean('General', 'GPGVerify', fallback=False):
+                self.gpg_verify = True
 
-        if config['general'].getboolean('verbose', fallback=False):
-            self.verbose = True
-        if config['general'].getboolean('stacktrace', fallback=False):
-            self.stacktrace = True
+            self.update_status_path = config.get('General', 'UpdatesStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
 
-        self.os_distro_name = config['os'].get('os.distro.name', fallback='os')
-        self.self_test_command = config['os'].get('self.test.command')
+            if config.getboolean('General', 'Verbose', fallback=False):
+                self.verbose = True
+            if config.getboolean('General', 'Stacktrace', fallback=False):
+                self.stacktrace = True
 
-        self.app_ostree_home = config['app'].get('app.ostree.home')
+            self.os_distro_name = config.get('OS', 'OSDistroName', fallback='os')
+            self.self_test_command = config.get('OS', 'SelfTestCommand', fallback=None)
+
+            self.app_ostree_home = config.get('App', 'AppOSTreeHome')
+        except configparser.NoSectionError as err:
+            raise ValueError("No '{}' section in FotaHub configuration file {}".format(err.section, self.config_path))
+        except configparser.NoOptionError as err:
+            raise ValueError("Mandatory '{}' option missing in '{}' section of FotaHub configuration file {}".format(err.option, err.section, self.config_path))
