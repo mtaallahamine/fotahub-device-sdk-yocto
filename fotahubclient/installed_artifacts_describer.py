@@ -2,22 +2,11 @@ from functools import update_wrapper
 import json
 from fotahubclient.app_updater import AppUpdater
 
-from fotahubclient.base_describer import ArtifactKind
-from fotahubclient.base_describer import PascalCaseJSONEncoder
+from fotahubclient.json_object_types import ArtifactKind
+from fotahubclient.json_object_types import InstalledArtifacts
+from fotahubclient.json_object_types import InstalledArtifactInfo
+from fotahubclient.json_encode_decode import PascalCaseJSONEncoder
 from fotahubclient.os_updater import OSUpdater
-
-class InstalledArtifactInfo(object):
-
-    def __init__(self, name, kind, installed_revision, rollback_revision=None):
-        self.name = name
-        self.kind = kind
-        self.installed_revision = installed_revision
-        self.rollback_revision = rollback_revision
-
-class InstalledArtifacts(object):
-
-    def __init__(self, installed_artifacts):
-        self.installed_artifacts = installed_artifacts
 
 class InstalledArtifactsDescriber(object):
 

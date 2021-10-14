@@ -9,7 +9,7 @@ USER_CONFIG_FILE_NAME = '.fotahub'
 
 class ConfigLoader(object):
     
-    def __init__(self, config_path=SYSTEM_CONFIG_PATH, update_status_path=UPDATE_STATUS_PATH_DEFAULT, verbose=False, stacktrace=False):
+    def __init__(self, config_path=SYSTEM_CONFIG_PATH, update_status_path=None, verbose=False, stacktrace=False):
         self.config_path = config_path
         self.update_status_path = update_status_path
         
@@ -35,7 +35,8 @@ class ConfigLoader(object):
             if config.getboolean('General', 'GPGVerify', fallback=False):
                 self.gpg_verify = True
 
-            self.update_status_path = config.get('General', 'UpdatesStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
+            if self.update_status_path is None:
+                self.update_status_path = config.get('General', 'UpdatesStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
 
             if config.getboolean('General', 'Verbose', fallback=False):
                 self.verbose = True

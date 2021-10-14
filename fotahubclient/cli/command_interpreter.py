@@ -2,7 +2,9 @@ import logging
 
 from fotahubclient.os_updater import OSUpdater
 from fotahubclient.os_update_finalizer import OSUpdateFinalizer
-from fotahubclient.update_status_describer import UpdateStatusDescriber
+from fotahubclient.json_object_types import UpdateStatus
+from fotahubclient.update_status_tracker import UpdateStatusTracker
+from fotahubclient.update_status_tracker import UpdateStatusDescriber
 from fotahubclient.installed_artifacts_describer import InstalledArtifactsDescriber
 
 UPDATE_OPERATING_SYSTEM_CMD = 'update-operating-system'
@@ -38,9 +40,16 @@ class CommandInterpreter(object):
     def update_operating_system(self, revision, max_reboot_failures):
         self.logger.info('Initiating OS update to revision ' + revision)
 
-        updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
-        updater.pull_os_update(revision)
-        updater.activate_os_update(revision, max_reboot_failures)
+        with UpdateStatusTracker(self.config) as tracker:
+            updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+            try:
+                updater.pull_os_update(revision)
+                tracker.record_os_update_status(UpdateStatus.downloaded, revision=revision)
+
+                updater.activate_os_update(revision, max_reboot_failures)
+            except Exception as err:
+                tracker.record_os_update_status(UpdateStatus.failed, error_message=str(err))
+                raise err
 
     def revert_operating_system(self):
         self.logger.info('Reverting OS to previous revision')
@@ -48,7 +57,7 @@ class CommandInterpreter(object):
         updater.revert_os_update()
 
     def finish_operating_system_change(self):
-        self.logger.info('Finalizing OS change')
+        self.logger.info('Finalizing OS update or rollback, if any such has happened')
 
         finalizer = OSUpdateFinalizer(self.config)
         finalizer.run()

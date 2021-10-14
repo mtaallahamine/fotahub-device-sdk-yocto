@@ -3,6 +3,8 @@ import logging
 import shlex
 
 from fotahubclient.os_updater import OSUpdater
+from fotahubclient.update_status_tracker import UpdateStatus
+from fotahubclient.update_status_tracker import UpdateStatusTracker
 
 class OSUpdateFinalizer(object):
 
@@ -11,18 +13,27 @@ class OSUpdateFinalizer(object):
         self.config = config
 
     def run(self):
-        updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
-        self.logger.info("Booted OS revision: {}".format(updater.get_installed_os_revision()))
-        
-        if updater.is_activating_os_update():
-            if self.run_self_test():
-                updater.confirm_os_update()
+        with UpdateStatusTracker(self.config) as tracker:
+            updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+            self.logger.info("Booted OS revision: {}".format(updater.get_installed_os_revision()))
+            
+            if updater.is_activating_os_update():
+                tracker.record_os_update_status(UpdateStatus.activated)
+
+                [success, message] = self.run_self_test()
+                if success:
+                    updater.confirm_os_update()
+                    tracker.record_os_update_status(UpdateStatus.confirmed)
+                else:
+                    updater.revert_os_update()
+                    tracker.record_os_update_status(UpdateStatus.failed, message)
+            
+            elif updater.is_reverting_os_update():
+                updater.discard_os_update()
+                tracker.record_os_update_status(UpdateStatus.reverted)
+            
             else:
-                updater.revert_os_update()
-        elif updater.is_reverting_os_update():
-            updater.discard_os_update()
-        else:
-            self.logger.info('No OS update or rollback in progress, nothing to do')
+                self.logger.info('No OS update or rollback in progress, nothing to do')
 
     def run_self_test(self):
         if self.config.self_test_command is not None:
@@ -33,7 +44,7 @@ class OSUpdateFinalizer(object):
                 if process.stdout:
                     message += ': ' + process.stdout.strip()
                 self.logger.info(message)
-                return True
+                return [True, message]
             else:
                 message = 'Build-in self test failed'
                 if process.stderr:
@@ -41,4 +52,4 @@ class OSUpdateFinalizer(object):
                 elif process.stdout:
                     message += ': ' + process.stdout.strip()
                 self.logger.error(message)
-                return False
+                return [False, message]
