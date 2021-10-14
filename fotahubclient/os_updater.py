@@ -121,10 +121,10 @@ class OSUpdater(object):
     def is_reverting_os_update(self):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
 
-    def clean_os_update(self):
-        self.logger.info("Cleaning reverted OS update")
+    def discard_os_update(self):
+        self.logger.info("Discarding reverted OS update")
         if not self.is_reverting_os_update():
-            raise OSTreeError("Cannot clean OS update before any such has been reverted")
+            raise OSTreeError("Cannot discard OS update before any such has been reverted")
         
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
         try:
@@ -134,4 +134,4 @@ class OSUpdater(object):
                 # TODO Reimplement this behavior using OSTree API (see https://github.com/ostreedev/ostree/blob/8cb5d920c4b89d17c196f30f2c59fcbd4c762a17/src/ostree/ot-admin-builtin-undeploy.c#L59)
                 subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)
         except subprocess.CalledProcessError as err:
-            raise OSTreeError("Failed to clean reverted OS update") from err
+            raise OSTreeError("Failed to discard reverted OS update") from err

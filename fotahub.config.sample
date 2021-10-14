@@ -13,7 +13,7 @@ Stacktrace = false
 
 [OS]
 # Name of operating system distribution used on this device
-OSDistroName = fullmetalupdate-os-raspberrypi3
+OSDistroName = fotahub-os-raspberrypi3
 
 # Command used to validate whether operating system update works as expected
 SelfTestCommand = bash -c "echo 'This OS revision Looks good!'"

@@ -20,7 +20,7 @@ class OSUpdateFinalizer(object):
             else:
                 updater.revert_os_update()
         elif updater.is_reverting_os_update():
-            updater.clean_os_update()
+            updater.discard_os_update()
         else:
             self.logger.info('No OS update or rollback in progress, nothing to do')
 

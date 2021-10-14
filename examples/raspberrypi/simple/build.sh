@@ -73,7 +73,7 @@ show_latest_os_revision()
 {
   local MACHINE=$1
   
-  echo "Latest OS revision: $(ostree --repo=tmp/fullmetalupdate-os/deploy/images/$MACHINE/ostree_repo rev-parse fullmetalupdate-os-$MACHINE)"
+  echo "Latest OS revision: $(ostree --repo=tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo rev-parse fotahub-os-$MACHINE)"
 }
 
 show_latest_app_revision()
@@ -167,7 +167,7 @@ main()
       if [ ! -d "$YOCTO_BUILD_DIR/tmp/fullmetalupdate-containers/deploy/containers" ]; then
         DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
       fi
-      DISTRO=fullmetalupdate-os bitbake fullmetalupdate-os-package -k
+      DISTRO=fotahub-os bitbake fotahub-os-package -k
       
       show_latest_os_revision "$MACHINE"
       show_latest_app_revisions "$MACHINE"
@@ -209,7 +209,7 @@ main()
     bash)
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
-      local MACHINE=$(detect_machine)
+      export MACHINE=$(detect_machine)
 
       # Sym-link Yocto project build script into Yocto build directory
       if [ ! -f "$YOCTO_BUILD_DIR/$(basename $0)" ]; then
