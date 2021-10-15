@@ -42,14 +42,12 @@ class UpdateStatusTracker(object):
         )
 
     def __ensure_default_message(self, status, message):
-        if message is None:
+        if message is None and status in UPDATE_STATUS_INFO_MESSAGE_DEFAULTS.keys():
             return UPDATE_STATUS_INFO_MESSAGE_DEFAULTS[status]
         return message
         
     def __lookup_os_update_status(self, os_distro_name):
         for update_status_info in self.update_statuses.update_statuses:
-            print(update_status_info.artifact_kind)
-            print(update_status_info.status)
             if update_status_info.artifact_name == os_distro_name and update_status_info.artifact_kind == ArtifactKind.OperatingSystem:
                 return update_status_info
             else:
