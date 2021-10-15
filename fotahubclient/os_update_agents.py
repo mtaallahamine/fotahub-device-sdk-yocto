@@ -13,7 +13,7 @@ class OSUpdateInitiator(object):
         self.config = config
 
     def initiate_os_update(self, revision, max_reboot_failures):
-        with UpdateStatusTracker(self.config) as tracker:
+        with UpdateStatusTracker(self.config, force_instant_flushing=True) as tracker:
             updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
             try:
                 updater.pull_os_update(revision)
@@ -59,7 +59,7 @@ class OSUpdateFinalizer(object):
                     tracker.record_os_update_status(UpdateStatus.confirmed)
                 else:
                     updater.revert_os_update()
-                    tracker.record_os_update_status(UpdateStatus.failed, message)
+                    tracker.record_os_update_status(UpdateStatus.failed, message=message)
             
             elif updater.is_reverting_os_update():
                 updater.discard_os_update()

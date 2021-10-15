@@ -12,8 +12,9 @@ UPDATE_STATUS_INFO_MESSAGE_DEFAULTS = {
 
 class UpdateStatusTracker(object):
 
-    def __init__(self, config):
+    def __init__(self, config, force_instant_flushing=False):
         self.config = config
+        self.force_instant_flushing = force_instant_flushing
         self.update_statuses = UpdateStatuses()
 
     def __enter__(self):
@@ -22,13 +23,13 @@ class UpdateStatusTracker(object):
         return self 
 
     def record_os_update_status(self, status, revision=None, message=None):
-        update_info = self.__lookup_os_update_status(self.config.os_distro_name)
-        if update_info is not None:
+        update_status_info = self.__lookup_os_update_status(self.config.os_distro_name)
+        if update_status_info is not None:
             if revision is not None:
-                update_info.revision = revision
-            update_info.status = status
+                update_status_info.revision = revision
+            update_status_info.status = status
             if message is not None:
-                update_info.message = message
+                update_status_info.message = message
         else:
             self.__append_update_status(
                 UpdateStatusInfo(
@@ -60,7 +61,7 @@ class UpdateStatusTracker(object):
         self.update_statuses.update_statuses.append(update_status_info)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path)
+        UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, self.force_instant_flushing)
 
 class UpdateStatusDescriber(object):
 

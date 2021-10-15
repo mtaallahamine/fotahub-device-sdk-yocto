@@ -69,11 +69,19 @@ detect_machine()
   sed -n "s/^MACHINE\s*??=\s*'\(.*\)'/\1/p" < $YOCTO_BUILD_DIR/conf/local.conf
 }
 
+yield_latest_os_disk_image()
+{
+  local MACHINE=$1
+
+  mkdir -p "$YOCTO_PROJECT_DIR/build/images"
+  cp "$PWD/tmp/fotahub-os/deploy/images/$MACHINE/fotahub-os-package-$MACHINE.wic" "$YOCTO_PROJECT_DIR/build/images"
+}
+
 show_latest_os_revision()
 {
   local MACHINE=$1
   
-  echo "Latest OS revision: $(ostree --repo=tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo rev-parse fotahub-os-$MACHINE)"
+  echo "Latest OS revision: $(ostree --repo="$PWD/tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo" rev-parse fotahub-os-$MACHINE)"
 }
 
 show_latest_app_revision()
@@ -81,14 +89,14 @@ show_latest_app_revision()
   local MACHINE=$1
   local APP=$2
 
-  echo "Latest '$APP' revision: $(ostree --repo=tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers rev-parse $APP)"
+  echo "Latest '$APP' revision: $(ostree --repo="$PWD/tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers" rev-parse $APP)"
 }
 
 show_latest_app_revisions()
 {
   local MACHINE=$1
 
-  for REF in $(ostree --repo=tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers refs); do 
+  for REF in $(ostree --repo="$PWD/tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers" refs); do 
     show_latest_app_revision $MACHINE $REF
   done
 }
@@ -168,7 +176,8 @@ main()
         DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
       fi
       DISTRO=fotahub-os bitbake fotahub-os-package -k
-      
+
+      yield_latest_os_disk_image "$MACHINE"
       show_latest_os_revision "$MACHINE"
       show_latest_app_revisions "$MACHINE"
       ;;

@@ -53,13 +53,20 @@ class UpdateStatuses(object):
             return json.load(file, cls=UpdateStatusesJSONDecoder)
 
     @staticmethod
-    def save_update_statuses(update_statuses, path):
+    def save_update_statuses(update_statuses, path, force_instant_flushing=False):
         parent = os.path.dirname(path)
         if not os.path.isdir(parent):
             os.makedirs(parent, exist_ok=True)
 
         with open(path, 'w', encoding='utf-8') as file:
             json.dump(update_statuses, file, ensure_ascii=False, indent=4, cls=PascalCaseJSONEncoder)
+            
+            if force_instant_flushing:
+                # Flush the Python runtime's internal buffers
+                file.flush()
+
+                # Synchronize the operating system's buffers with file content on disk
+                os.fsync(file.fileno())
 
     @staticmethod
     def dump_update_statuses(path):
