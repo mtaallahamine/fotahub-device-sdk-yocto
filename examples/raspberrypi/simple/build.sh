@@ -97,7 +97,7 @@ show_usage()
 {
   cat << EOF
 
-Usage: $(basename $0) command [args]"
+Usage: $(basename $0) command [args]
 
 Commands:
     sync <machine>
@@ -210,11 +210,6 @@ main()
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       export MACHINE=$(detect_machine)
-
-      # Sym-link Yocto project build script into Yocto build directory
-      if [ ! -f "$YOCTO_BUILD_DIR/$(basename $0)" ]; then
-        ln -s $0 $(basename $0)
-      fi
 
       bash
       ;;
