@@ -1,5 +1,6 @@
 from enum import Enum
 import json
+import os
 
 from fotahubclient.json_encode_decode import PascalCaseJSONEncoder, PascalCasedObjectArrayJSONDecoder
 
@@ -53,6 +54,10 @@ class UpdateStatuses(object):
 
     @staticmethod
     def save_update_statuses(update_statuses, path):
+        parent = os.path.dirname(os.path)
+        if not os.isdir(parent):
+            os.makedirs(parent, exist_ok=True)
+
         with open(path, 'w', encoding='utf-8') as file:
             json.dump(update_statuses, file, ensure_ascii=False, indent=4, cls=PascalCaseJSONEncoder)
 
