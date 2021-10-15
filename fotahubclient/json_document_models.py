@@ -54,8 +54,8 @@ class UpdateStatuses(object):
 
     @staticmethod
     def save_update_statuses(update_statuses, path):
-        parent = os.path.dirname(os.path)
-        if not os.isdir(parent):
+        parent = os.path.dirname(path)
+        if not os.path.isdir(parent):
             os.makedirs(parent, exist_ok=True)
 
         with open(path, 'w', encoding='utf-8') as file:
