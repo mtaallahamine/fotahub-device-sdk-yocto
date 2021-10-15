@@ -1,24 +1,18 @@
-from functools import update_wrapper
-import json
-from fotahubclient.app_updater import AppUpdater
-
-from fotahubclient.json_object_types import ArtifactKind
-from fotahubclient.json_object_types import InstalledArtifacts
-from fotahubclient.json_object_types import InstalledArtifactInfo
-from fotahubclient.json_encode_decode import PascalCaseJSONEncoder
+from fotahubclient.json_document_models import ArtifactKind, InstalledArtifacts, InstalledArtifactInfo
 from fotahubclient.os_updater import OSUpdater
+from fotahubclient.app_updater import AppUpdater
 
 class InstalledArtifactsDescriber(object):
 
     def __init__(self, config):
         self.config = config
 
-    def describe(self, artifact_names=[]):
+    def describe_installed_artifacts(self, artifact_names=[]):
         installed_artifacts = InstalledArtifacts(
             ([self.describe_installed_os()] if not artifact_names or self.config.os_distro_name in artifact_names else []) +
             self.describe_installed_apps(artifact_names)
         )
-        return json.dumps(installed_artifacts, indent=4, cls=PascalCaseJSONEncoder)
+        return installed_artifacts.serialize()
 
     def describe_installed_os(self):
         os_updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)

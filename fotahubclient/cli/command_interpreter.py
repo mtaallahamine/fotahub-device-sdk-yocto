@@ -1,9 +1,6 @@
 import logging
 
-from fotahubclient.os_updater import OSUpdater
-from fotahubclient.os_update_finalizer import OSUpdateFinalizer
-from fotahubclient.json_object_types import UpdateStatus
-from fotahubclient.update_status_tracker import UpdateStatusTracker
+from fotahubclient.os_update_agents import OSUpdateInitiator, OSUpdateReverter, OSUpdateFinalizer
 from fotahubclient.update_status_tracker import UpdateStatusDescriber
 from fotahubclient.installed_artifacts_describer import InstalledArtifactsDescriber
 
@@ -38,46 +35,39 @@ class CommandInterpreter(object):
             self.describe_update_status(args.artifact_names)
 
     def update_operating_system(self, revision, max_reboot_failures):
-        self.logger.info('Initiating OS update to revision ' + revision)
+        self.logger.debug('Initiating OS update to revision ' + revision)
 
-        with UpdateStatusTracker(self.config) as tracker:
-            updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
-            try:
-                updater.pull_os_update(revision)
-                tracker.record_os_update_status(UpdateStatus.downloaded, revision=revision)
-
-                updater.activate_os_update(revision, max_reboot_failures)
-            except Exception as err:
-                tracker.record_os_update_status(UpdateStatus.failed, error_message=str(err))
-                raise err
+        initiator = OSUpdateInitiator(self.config)
+        initiator.initiate_os_update(revision, max_reboot_failures)
 
     def revert_operating_system(self):
-        self.logger.info('Reverting OS to previous revision')
-        updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
-        updater.revert_os_update()
+        self.logger.debug('Reverting OS to previous revision')
+
+        reverter = OSUpdateReverter(self.config)
+        reverter.revert_os_update()
 
     def finish_operating_system_change(self):
-        self.logger.info('Finalizing OS update or rollback, if any such has happened')
+        self.logger.debug('Finalizing OS update or rollback, if any such has happened')
 
         finalizer = OSUpdateFinalizer(self.config)
-        finalizer.run()
+        finalizer.finalize_os_update()
 
     def update_application(self, name, revision):
-        self.logger.info('Updating ' + name + ' application to revision ' + revision)
+        self.logger.debug('Updating ' + name + ' application to revision ' + revision)
         raise ValueError('Not yet implemented')
 
     def revert_application(self, name):
-        self.logger.info('Reverting ' + name + ' application to previous revision ')
+        self.logger.debug('Reverting ' + name + ' application to previous revision ')
         raise ValueError('Not yet implemented')
 
     def describe_installed_artifacts(self, artifact_names=[]):
-        self.logger.info('Retrieving installed artifacts')
+        self.logger.debug('Retrieving installed artifacts')
 
         describer = InstalledArtifactsDescriber(self.config)
-        print(describer.describe(artifact_names))
+        print(describer.describe_installed_artifacts(artifact_names))
 
     def describe_update_status(self, artifact_names=[]):
-        self.logger.info('Retrieving update status')
+        self.logger.debug('Retrieving update status')
 
         describer = UpdateStatusDescriber(self.config)
-        print(describer.describe(artifact_names))
+        print(describer.describe_update_status(artifact_names))

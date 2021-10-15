@@ -6,13 +6,46 @@ from fotahubclient.os_updater import OSUpdater
 from fotahubclient.update_status_tracker import UpdateStatus
 from fotahubclient.update_status_tracker import UpdateStatusTracker
 
+class OSUpdateInitiator(object):
+
+    def __init__(self, config):
+        self.logger = logging.getLogger()
+        self.config = config
+
+    def initiate_os_update(self, revision, max_reboot_failures):
+        with UpdateStatusTracker(self.config) as tracker:
+            updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+            try:
+                updater.pull_os_update(revision)
+                tracker.record_os_update_status(UpdateStatus.downloaded, revision=revision)
+
+                updater.activate_os_update(revision, max_reboot_failures)
+            except Exception as err:
+                tracker.record_os_update_status(UpdateStatus.failed, message=str(err))
+                raise err
+
+class OSUpdateReverter(object):
+
+    def __init__(self, config):
+        self.logger = logging.getLogger()
+        self.config = config
+
+    def revert_os_update(self):
+        with UpdateStatusTracker(self.config) as tracker:
+            updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+            try:
+                updater.revert_os_update()
+            except Exception as err:
+                tracker.record_os_update_status(UpdateStatus.failed, message=str(err))
+                raise err
+
 class OSUpdateFinalizer(object):
 
     def __init__(self, config):
         self.logger = logging.getLogger()
         self.config = config
 
-    def run(self):
+    def finalize_os_update(self):
         with UpdateStatusTracker(self.config) as tracker:
             updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
             self.logger.info("Booted OS revision: {}".format(updater.get_installed_os_revision()))
