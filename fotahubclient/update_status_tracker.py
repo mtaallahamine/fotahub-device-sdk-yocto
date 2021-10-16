@@ -29,7 +29,7 @@ class UpdateStatusTracker(object):
         if update_status_info is not None:
             if update_status_info.status.is_final():
                 update_status_info.revision = None
-                update_status_info.install_data = datetime.today().strftime(UPDATE_DATE_TIME_FORMAT)
+                update_status_info.install_date = datetime.today().strftime(UPDATE_DATE_TIME_FORMAT)
                 update_status_info.message = None
             
             update_status_info.status = status
