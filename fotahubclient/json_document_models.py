@@ -62,7 +62,7 @@ class UpdateStatuses(object):
         if not os.path.isdir(parent):
             os.makedirs(parent, exist_ok=True)
 
-        with open(path, 'w', encoding='utf-8') as file:
+        with open(path, 'w+', encoding='utf-8') as file:
             json.dump(update_statuses, file, ensure_ascii=False, indent=4, cls=PascalCaseJSONEncoder)
             
             if force_instant_flushing:
