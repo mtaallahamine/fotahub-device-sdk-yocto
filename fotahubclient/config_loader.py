@@ -19,7 +19,8 @@ class ConfigLoader(object):
         self.stacktrace = stacktrace
 
         self.os_distro_name = None
-        self.self_test_command = None
+        self.os_update_verification_command = None
+        self.os_update_self_test_command = None
 
     def load(self):
         user_config_path = os.path.expanduser("~") + '/' + USER_CONFIG_FILE_NAME
@@ -44,7 +45,8 @@ class ConfigLoader(object):
                 self.stacktrace = True
 
             self.os_distro_name = config.get('OS', 'OSDistroName', fallback='os')
-            self.self_test_command = config.get('OS', 'SelfTestCommand', fallback=None)
+            self.os_update_verification_command = config.get('OS', 'OSUpdateVerificationCommand', fallback=None)
+            self.os_update_self_test_command = config.get('OS', 'OSUpdateSelfTestCommand', fallback=None)
 
             self.app_ostree_home = config.get('App', 'AppOSTreeHome')
         except configparser.NoSectionError as err:

@@ -6,9 +6,9 @@ gi.require_version("OSTree", "1.0")
 from gi.repository import OSTree, GLib
 
 import fotahubclient.common_constants as constants
-from fotahubclient.ostree_repo import OSTreeRepo
-from fotahubclient.ostree_repo import OSTreeError
+from fotahubclient.ostree_repo import OSTreeRepo, OSTreeError
 from fotahubclient.uboot_operator import UBootOperator
+from fotahubclient.system_helper import reboot_system
 
 OSTREE_SYSTEM_REPOSITORY_PATH = '/ostree/repo'
 
@@ -93,9 +93,11 @@ class OSUpdater(object):
             raise OSTreeError("Cannot update OS towards the same revision that is already in use")
             
         self.__stage_os_update(revision)
+
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE, '1')
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT, str(max_reboot_failures))
-        self.uboot.reboot()
+
+        reboot_system()
 
     def is_activating_os_update(self):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
@@ -116,7 +118,8 @@ class OSUpdater(object):
         self.uboot.set_uboot_env_var(UBOOT_FLAG_ACTIVATING_OS_UPDATE)
         self.uboot.set_uboot_env_var(UBOOT_VAR_OS_UPDATE_REBOOT_FAILURE_CREDIT)
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE, '1')
-        self.uboot.reboot()
+
+        reboot_system()
 
     def is_reverting_os_update(self):
         return self.uboot.isset_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
@@ -127,6 +130,7 @@ class OSUpdater(object):
             raise OSTreeError("Cannot discard OS update before any such has been reverted")
         
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
+
         try:
             [pending, _] = self.sysroot.query_deployments_for(None)
             if pending is not None:                    

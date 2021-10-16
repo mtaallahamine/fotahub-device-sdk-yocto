@@ -54,11 +54,11 @@ class CommandInterpreter(object):
 
     def update_application(self, name, revision):
         self.logger.debug('Updating ' + name + ' application to revision ' + revision)
-        raise ValueError('Not yet implemented')
+        raise NotImplementedError('Not yet implemented')
 
     def revert_application(self, name):
         self.logger.debug('Reverting ' + name + ' application to previous revision ')
-        raise ValueError('Not yet implemented')
+        raise NotImplementedError('Not yet implemented')
 
     def describe_installed_artifacts(self, artifact_names=[]):
         self.logger.debug('Retrieving installed artifacts')

@@ -34,11 +34,3 @@ class UBootOperator(object):
             return bool(re.search(r'^{}='.format(name), process.stdout, re.MULTILINE))
         except subprocess.CalledProcessError as err:
           return False
-
-    def reboot(self):
-        self.logger.info("Rebooting system")
-        
-        try:
-            subprocess.run("reboot", check=True)
-        except subprocess.CalledProcessError as err:
-            raise OSError("Failed to reboot system") from err

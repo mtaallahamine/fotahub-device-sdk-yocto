@@ -12,10 +12,11 @@ class ArtifactKind(Enum):
 
 class UpdateStatus(Enum):
     downloaded = 1
-    activated = 2
-    confirmed = 3 
-    reverted = 4
-    failed = 5
+    verified = 2
+    activated = 3
+    confirmed = 4 
+    reverted = 5
+    failed = 6
 
 class InstalledArtifactInfo(object):
     def __init__(self, name, kind, installed_revision, rollback_revision=None):
