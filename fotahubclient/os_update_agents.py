@@ -22,13 +22,13 @@ class OSUpdateInitiator(object):
 
                 [success, message] = run_hook_command('OS update verification', self.config.os_update_verification_command, revision)
                 if success:
-                    tracker.record_os_update_status(UpdateStatus.verified)
+                    tracker.record_os_update_status(UpdateStatus.verified, revision=revision)
                     updater.activate_os_update(revision, max_reboot_failures)
                 else:
                     raise RuntimeError(message)
 
             except Exception as err:
-                tracker.record_os_update_status(UpdateStatus.failed, message=str(err))
+                tracker.record_os_update_status(UpdateStatus.failed, revision=revision, message=str(err))
                 raise err
 
 class OSUpdateReverter(object):
