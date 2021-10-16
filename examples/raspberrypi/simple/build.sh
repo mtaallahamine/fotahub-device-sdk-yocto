@@ -66,7 +66,7 @@ sync_yocto_layers()
 
 detect_machine()
 {
-  sed -n "s/^MACHINE\s*??=\s*'\(.*\)'/\1/p" < $YOCTO_BUILD_DIR/conf/local.conf
+  sed -n "s/^MACHINE\s*?*=\s*'\(.*\)'/\1/p" < $YOCTO_BUILD_DIR/conf/local.conf
 }
 
 yield_latest_os_disk_image()

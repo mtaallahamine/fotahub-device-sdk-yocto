@@ -2,10 +2,16 @@ import logging
 import subprocess
 import shlex
 
-def run_hook_command(command, title):
+def run_hook_command(title, command, args):
     if command is not None:
         logging.getLogger().info('Running ' + title)
-        process = subprocess.run(shlex.split(command), universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+
+        command = shlex.split(command)
+        args = args if isinstance(args, list) else [args] 
+        if command[0] == 'sh' or command[0] == 'bash':
+            args = [command[0]] + args
+        
+        process = subprocess.run(command + args, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         if process.returncode == 0:
             message = title + ' succeeded'
             if process.stdout:

@@ -20,7 +20,7 @@ class OSUpdateInitiator(object):
                 updater.pull_os_update(revision)
                 tracker.record_os_update_status(UpdateStatus.downloaded, revision=revision)
 
-                [success, message] = run_hook_command(self.config.os_update_verification_command, 'OS update verification')
+                [success, message] = run_hook_command('OS update verification', self.config.os_update_verification_command, revision)
                 if success:
                     tracker.record_os_update_status(UpdateStatus.verified)
                     updater.activate_os_update(revision, max_reboot_failures)
@@ -61,7 +61,7 @@ class OSUpdateFinalizer(object):
                 if updater.is_activating_os_update():
                     tracker.record_os_update_status(UpdateStatus.activated)
 
-                    [success, message] = run_hook_command(self.config.os_update_self_test_command, 'OS update self test')
+                    [success, message] = run_hook_command('OS update self test', self.config.os_update_self_test_command)
                     if success:
                         updater.confirm_os_update()
                         tracker.record_os_update_status(UpdateStatus.confirmed)
