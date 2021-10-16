@@ -2,12 +2,12 @@ import logging
 import subprocess
 import shlex
 
-def run_hook_command(title, command, args):
+def run_hook_command(title, command, args=[]):
     if command is not None:
         logging.getLogger().info('Running ' + title)
 
         command = shlex.split(command)
-        args = args if isinstance(args, list) else [args] 
+        args = [args] if not isinstance(args, list) else args
         if command[0] == 'sh' or command[0] == 'bash':
             args = [command[0]] + args
         
