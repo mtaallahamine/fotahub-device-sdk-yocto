@@ -18,6 +18,9 @@ class UpdateStatus(Enum):
     reverted = 5
     failed = 6
 
+    def is_final(self):
+        return self == UpdateStatus.confirmed or self == UpdateStatus.reverted or self == UpdateStatus.failed
+
 class InstalledArtifactInfo(object):
     def __init__(self, name, kind, installed_revision, rollback_revision=None):
         self.name = name

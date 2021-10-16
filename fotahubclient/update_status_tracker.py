@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime
 
 from fotahubclient.json_document_models import UPDATE_DATE_TIME_FORMAT, ArtifactKind
@@ -11,6 +12,7 @@ UPDATE_STATUS_INFO_MESSAGE_DEFAULTS = {
 class UpdateStatusTracker(object):
 
     def __init__(self, config, force_instant_flushing=False):
+        self.logger = logging.getLogger()
         self.config = config
         self.force_instant_flushing = force_instant_flushing
         self.update_statuses = UpdateStatuses()
@@ -21,11 +23,18 @@ class UpdateStatusTracker(object):
         return self 
 
     def record_os_update_status(self, status, revision=None, message=None):
+        self.logger.info("Recording OS update status: status = {}, revision = {}, message = {}".format(status, revision, message))
+
         update_status_info = self.__lookup_os_update_status(self.config.os_distro_name)
         if update_status_info is not None:
+            if update_status_info.status.is_final():
+                update_status_info.revision = None
+                update_status_info.install_data = datetime.today().strftime(UPDATE_DATE_TIME_FORMAT)
+                update_status_info.message = None
+            
+            update_status_info.status = status
             if revision is not None:
                 update_status_info.revision = revision
-            update_status_info.status = status
             if message is not None:
                 update_status_info.message = message
         else:
