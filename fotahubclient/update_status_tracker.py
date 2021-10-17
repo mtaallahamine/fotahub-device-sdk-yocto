@@ -22,8 +22,6 @@ class UpdateStatusTracker(object):
         return self 
 
     def record_os_update_status(self, status, revision=None, message=None, save_instantly=False):
-        self.logger.info("Recording OS update status: status = {}, revision = {}, message = {}".format(status, revision, message))
-
         update_status_info = self.__lookup_os_update_status(self.config.os_distro_name)
         if update_status_info is not None:
             if update_status_info.status.is_final():
