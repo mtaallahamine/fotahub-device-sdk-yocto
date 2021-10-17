@@ -2,7 +2,7 @@ import os
 import configparser
 from configparser import ConfigParser
 
-UPDATE_STATUS_PATH_DEFAULT = '/var/log/fotahub/updatestatus.json'
+UPDATE_STATUS_PATH_DEFAULT = '/var/log/fotahub/update-status.json'
 
 SYSTEM_CONFIG_PATH = '/etc/fotahub/fotahub.config'
 USER_CONFIG_FILE_NAME = '.fotahub'
@@ -37,7 +37,7 @@ class ConfigLoader(object):
                 self.gpg_verify = True
 
             if self.update_status_path is None:
-                self.update_status_path = config.get('General', 'UpdatesStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
+                self.update_status_path = config.get('General', 'UpdateStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
 
             if config.getboolean('General', 'Verbose', fallback=False):
                 self.verbose = True
