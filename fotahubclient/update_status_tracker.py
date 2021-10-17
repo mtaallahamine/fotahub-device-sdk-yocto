@@ -11,10 +11,9 @@ UPDATE_STATUS_INFO_MESSAGE_DEFAULTS = {
 
 class UpdateStatusTracker(object):
 
-    def __init__(self, config, force_instant_flushing=False):
+    def __init__(self, config):
         self.logger = logging.getLogger()
         self.config = config
-        self.force_instant_flushing = force_instant_flushing
         self.update_statuses = UpdateStatuses()
 
     def __enter__(self):
@@ -22,7 +21,7 @@ class UpdateStatusTracker(object):
             self.update_statuses = UpdateStatuses.load_update_statuses(self.config.update_status_path)
         return self 
 
-    def record_os_update_status(self, status, revision=None, message=None):
+    def record_os_update_status(self, status, revision=None, message=None, save_instantly=False):
         self.logger.info("Recording OS update status: status = {}, revision = {}, message = {}".format(status, revision, message))
 
         update_status_info = self.__lookup_os_update_status(self.config.os_distro_name)
@@ -49,6 +48,9 @@ class UpdateStatusTracker(object):
                 )
         )
 
+        if save_instantly:
+            UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, True)
+
     def __ensure_default_message(self, status, message):
         if message is None and status in UPDATE_STATUS_INFO_MESSAGE_DEFAULTS.keys():
             return UPDATE_STATUS_INFO_MESSAGE_DEFAULTS[status]
@@ -68,7 +70,7 @@ class UpdateStatusTracker(object):
         self.update_statuses.update_statuses.append(update_status_info)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, self.force_instant_flushing)
+        UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path)
 
 class UpdateStatusDescriber(object):
 

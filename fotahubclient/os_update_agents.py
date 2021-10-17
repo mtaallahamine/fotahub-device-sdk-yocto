@@ -14,7 +14,7 @@ class OSUpdateInitiator(object):
         self.config = config
 
     def initiate_os_update(self, revision, max_reboot_failures):
-        with UpdateStatusTracker(self.config, force_instant_flushing=True) as tracker:
+        with UpdateStatusTracker(self.config) as tracker:
             try:
                 updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
                 updater.pull_os_update(revision)
@@ -22,7 +22,7 @@ class OSUpdateInitiator(object):
 
                 [success, message] = run_hook_command('OS update verification', self.config.os_update_verification_command, revision)
                 if success:
-                    tracker.record_os_update_status(UpdateStatus.verified, revision=revision)
+                    tracker.record_os_update_status(UpdateStatus.verified, revision=revision, save_instantly=True)
                     updater.activate_os_update(revision, max_reboot_failures)
                 else:
                     raise RuntimeError(message)

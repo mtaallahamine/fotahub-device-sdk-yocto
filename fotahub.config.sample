@@ -3,7 +3,7 @@
 GPGVerify = false
 
 # Where to store status information about latest operating system and application updates
-UpdateStatusPath = /var/log/fotahub/updatestatus.json
+UpdateStatusPath = /var/log/fotahub/update-status.json
 
 # Whether to enable verbose output
 Verbose = false 
