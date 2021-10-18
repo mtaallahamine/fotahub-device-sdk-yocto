@@ -41,27 +41,27 @@ sync_yocto_layers()
 {
   local MANIFEST_FILE=$1
   local SOURCES_DIR=$2
-  local MANIFEST_REPO_DIR=$SOURCES_DIR/manifest
-  local CURRENT_DIR=$PWD
+  local MANIFEST_REPO_DIR="$SOURCES_DIR/manifest"
+  local CURRENT_DIR="$PWD"
 
-  mkdir -p $MANIFEST_REPO_DIR
-  cd $MANIFEST_REPO_DIR
-  cp $MANIFEST_FILE .
+  mkdir -p "$MANIFEST_REPO_DIR"
+  cd "$MANIFEST_REPO_DIR"
+  cp "$MANIFEST_FILE" .
   if [ ! -d .git ]; then
     git init
     git config --local user.name $(whoami)
     git config --local user.email $(whoami)@localhost
   fi
   if [ -n "$(git status --porcelain)" ]; then
-    git add $(basename $MANIFEST_FILE)
+    git add $(basename "$MANIFEST_FILE")
     git commit --allow-empty-message -m ''
   fi
 
   cd "$SOURCES_DIR"
-  echo "N" | repo init -u "file://$MANIFEST_REPO_DIR" -b master -m $(basename $MANIFEST_FILE)
+  echo "N" | repo init -u "file://$MANIFEST_REPO_DIR" -b master -m $(basename "$MANIFEST_FILE")
   repo sync --force-sync
   
-  cd $CURRENT_DIR
+  cd "$CURRENT_DIR"
 }
 
 detect_machine()
@@ -72,33 +72,45 @@ detect_machine()
 yield_latest_os_disk_image()
 {
   local MACHINE=$1
+  local WIC_FILE="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE/fotahub-os-package-$MACHINE.wic"
 
-  mkdir -p "$YOCTO_PROJECT_DIR/build/images"
-  cp "$PWD/tmp/fotahub-os/deploy/images/$MACHINE/fotahub-os-package-$MACHINE.wic" "$YOCTO_PROJECT_DIR/build/images"
+  if [ -f "$WIC_FILE" ]; then
+    mkdir -p "$YOCTO_PROJECT_DIR/build/images"
+    cp "$WIC_FILE" "$YOCTO_PROJECT_DIR/build/images"
+  fi
 }
 
 show_latest_os_revision()
 {
   local MACHINE=$1
-  
-  echo "Latest OS revision: $(ostree --repo="$PWD/tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo" rev-parse fotahub-os-$MACHINE)"
+  local OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo"
+
+  if [ -d "$OSTREE_REPO_DIR" ]; then
+    echo "Latest OS revision: $(ostree --repo="$OSTREE_REPO_DIR" rev-parse fotahub-os-$MACHINE)"
+  fi
 }
 
 show_latest_app_revision()
 {
   local MACHINE=$1
   local APP=$2
+  local OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE/ostree_repo"
 
-  echo "Latest '$APP' revision: $(ostree --repo="$PWD/tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers" rev-parse $APP)"
+  if [ -d "$OSTREE_REPO_DIR" ]; then
+    echo "Latest '$APP' revision: $(ostree --repo="$OSTREE_REPO_DIR" rev-parse $APP)"
+  fi
 }
 
 show_latest_app_revisions()
 {
   local MACHINE=$1
+  local OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE/ostree_repo"
 
-  for REF in $(ostree --repo="$PWD/tmp/fullmetalupdate-containers/deploy/images/$MACHINE/ostree_repo_containers" refs); do 
-    show_latest_app_revision $MACHINE $REF
-  done
+  if [ -d "$OSTREE_REPO_DIR" ]; then
+    for REF in $(ostree --repo="$OSTREE_REPO_DIR" refs); do 
+      show_latest_app_revision $MACHINE $REF
+    done
+  fi
 }
 
 show_usage()
@@ -113,7 +125,7 @@ Commands:
         (e.g. sync raspberrypi3)
 
     all
-        Build OS image including all applications as well as machine-dependent live image
+        Build OS including all applications as well as machine-dependent live image
         (e.g. '.wic' for Raspberry Pi)
 
     all-apps
@@ -172,10 +184,8 @@ main()
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      if [ ! -d "$YOCTO_BUILD_DIR/tmp/fullmetalupdate-containers/deploy/containers" ]; then
-        DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
-      fi
-      DISTRO=fotahub-os bitbake fotahub-os-package -k
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
+      DISTRO=fotahub-os bitbake fotahub-os-package -k $@
 
       yield_latest_os_disk_image "$MACHINE"
       show_latest_os_revision "$MACHINE"
@@ -187,7 +197,7 @@ main()
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      DISTRO=fullmetalupdate-containers bitbake fullmetalupdate-containers-package -k
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -k $@
 
       show_latest_app_revisions "$MACHINE"
       ;;
@@ -203,7 +213,7 @@ main()
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      DISTRO=fullmetalupdate-containers bitbake $APP -f -k
+      DISTRO=fotahub-apps bitbake $APP -f -k
       
       show_latest_app_revision "$MACHINE" "$APP"
       ;;
