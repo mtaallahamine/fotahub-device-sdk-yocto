@@ -1,4 +1,4 @@
-OSTREE_REMOTE_NAME = 'fotahub'
-OSTREE_REMOTE_URL = 'https://delta.fotahub.com'
+FOTAHUB_OSTREE_REMOTE_NAME = 'fotahub'
+FOTAHUB_OSTREE_REMOTE_URL = 'https://delta.fotahub.com'
 
 OSTREE_PULL_DEPTH = 1

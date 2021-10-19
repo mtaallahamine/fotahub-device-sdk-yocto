@@ -29,7 +29,7 @@ class OSUpdater(object):
         [sysroot, repo] = self.__open_ostree_repo()
         self.sysroot = sysroot
         self.ostree_repo = OSTreeRepo(repo)
-        self.ostree_repo.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, self.ostree_gpg_verify)
+        self.ostree_repo.add_ostree_remote(constants.FOTAHUB_OSTREE_REMOTE_NAME, constants.FOTAHUB_OSTREE_REMOTE_URL, self.ostree_gpg_verify)
 
         self.uboot = UBootOperator()
     
@@ -59,7 +59,7 @@ class OSUpdater(object):
         return rollback.get_csum()
         
     def pull_os_update(self, revision):
-        self.ostree_repo.pull_ostree_revision(constants.OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
+        self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
         self.logger.info(
@@ -75,7 +75,7 @@ class OSUpdater(object):
 
             osname = booted_deployment.get_osname()
             origin = booted_deployment.get_origin()
-            checksum = self.ostree_repo.resolve_ostree_revision(revision)
+            checksum = self.ostree_repo.resolve_ostree_revision(None, revision)
 
             [result, _] = self.sysroot.stage_tree(osname, checksum, origin, booted_deployment, None, None)
             if not result:

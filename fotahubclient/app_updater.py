@@ -22,7 +22,7 @@ class AppUpdater(object):
 
         repo = self.__open_ostree_repo(ostree_repo_path)
         self.ostree_repo = OSTreeRepo(repo)
-        self.ostree_repo.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, self.gpg_verify)
+        self.ostree_repo.add_ostree_remote(constants.FOTAHUB_OSTREE_REMOTE_NAME, constants.FOTAHUB_OSTREE_REMOTE_URL, self.gpg_verify)
 
         system_bus = SystemBus()
         self.systemd = system_bus.get('.systemd1')
@@ -41,7 +41,7 @@ class AppUpdater(object):
             raise OSTreeError('Failed to open application OSTree repo') from err
 
     def list_app_names(self):
-        return self.ostree_repo.list_ostree_refs()
+        return [ref.split(':')[1] if ':' in ref else ref for ref in self.ostree_repo.list_ostree_refs()]
 
     def resolve_installed_revision(self, app_name):
-        return self.ostree_repo.resolve_ostree_revision(app_name)
+        return self.ostree_repo.resolve_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, app_name)
