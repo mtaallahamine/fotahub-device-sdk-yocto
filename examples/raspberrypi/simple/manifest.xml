@@ -16,7 +16,6 @@
   <project remote="yocto" revision="rocko" name="meta-raspberrypi" path="meta-raspberrypi"/>
   
   <project remote="advancedtelematic" revision="rocko" name="meta-updater" path="meta-updater"/>
-  <project remote="fullmetalupdate" revision="rocko" name="meta-fullmetalupdate" path="meta-fullmetalupdate"/>
   <project remote="fullmetalupdate" revision="rocko" name="meta-fullmetalupdate-extra" path="meta-fullmetalupdate-extra"/>
   <project remote="fotahub" revision="main" name="meta-fotahub" path="meta-fotahub"/>
 
