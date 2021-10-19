@@ -67,8 +67,7 @@ class UpdateStatusTracker(object):
         for update_status_info in self.update_statuses.update_statuses:
             if update_status_info.artifact_name == artifact_name and update_status_info.artifact_kind == artifact_kind:
                 return update_status_info
-            else:
-                return None
+        return None
 
     def __append_update_status(self, update_status_info):
         self.update_statuses.update_statuses.append(update_status_info)
