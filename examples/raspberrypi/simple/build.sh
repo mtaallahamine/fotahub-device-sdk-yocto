@@ -134,6 +134,9 @@ Commands:
     app <app-name>
         Rebuild given application
 
+    show-revisions
+        Show latest OS and app revisions
+
     bash
         Start an interactive bash shell in the build container
 

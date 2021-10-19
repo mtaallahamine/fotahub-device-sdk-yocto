@@ -13,7 +13,7 @@ class ConfigLoader(object):
         self.config_path = config_path
         self.update_status_path = update_status_path
         
-        self.gpg_verify = False
+        self.ostree_gpg_verify = False
         
         self.verbose = verbose
         self.stacktrace = stacktrace
@@ -33,8 +33,8 @@ class ConfigLoader(object):
             config = ConfigParser()
             config.read(self.config_path)
 
-            if config.getboolean('General', 'GPGVerify', fallback=False):
-                self.gpg_verify = True
+            if config.getboolean('General', 'OSTreeGPGVerify', fallback=False):
+                self.ostree_gpg_verify = True
 
             if self.update_status_path is None:
                 self.update_status_path = config.get('General', 'UpdateStatusPath', fallback=UPDATE_STATUS_PATH_DEFAULT)
@@ -48,7 +48,7 @@ class ConfigLoader(object):
             self.os_update_verification_command = config.get('OS', 'OSUpdateVerificationCommand', fallback=None)
             self.os_update_self_test_command = config.get('OS', 'OSUpdateSelfTestCommand', fallback=None)
 
-            self.app_ostree_home = config.get('App', 'AppOSTreeHome')
+            self.app_ostree_repo_path = config.get('App', 'AppOSTreeRepoPath')
         except configparser.NoSectionError as err:
             raise ValueError("No '{}' section in FotaHub configuration file {}".format(err.section, self.config_path))
         except configparser.NoOptionError as err:

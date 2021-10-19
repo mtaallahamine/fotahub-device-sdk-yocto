@@ -16,7 +16,7 @@ class OSUpdateInitiator(object):
     def initiate_os_update(self, revision, max_reboot_failures):
         with UpdateStatusTracker(self.config) as tracker:
             try:
-                updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+                updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
                 updater.pull_os_update(revision)
                 tracker.record_os_update_status(UpdateStatus.downloaded, revision=revision)
 
@@ -40,7 +40,7 @@ class OSUpdateReverter(object):
     def revert_os_update(self):
         with UpdateStatusTracker(self.config) as tracker:
             try:
-                updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+                updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
                 updater.revert_os_update()
             except Exception as err:
                 tracker.record_os_update_status(UpdateStatus.failed, message=str(err))
@@ -55,7 +55,7 @@ class OSUpdateFinalizer(object):
     def finalize_os_update(self):
         with UpdateStatusTracker(self.config) as tracker:
             try:
-                updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+                updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
                 self.logger.info("Booted OS revision: {}".format(updater.get_installed_os_revision()))
                 
                 if updater.is_activating_os_update():

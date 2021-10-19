@@ -15,7 +15,7 @@ class InstalledArtifactsDescriber(object):
         return installed_artifacts.serialize()
 
     def describe_installed_os(self):
-        os_updater = OSUpdater(self.config.os_distro_name, self.config.gpg_verify)
+        os_updater = OSUpdater(self.config.os_distro_name, self.config.ostree_gpg_verify)
         return InstalledArtifactInfo(
             os_updater.os_distro_name, 
             ArtifactKind.OperatingSystem, 
@@ -24,7 +24,7 @@ class InstalledArtifactsDescriber(object):
         )
 
     def describe_installed_apps(self, artifact_names=[]):
-        app_updater = AppUpdater(self.config.app_ostree_home, self.config.gpg_verify)
+        app_updater = AppUpdater(self.config.app_ostree_repo_path, self.config.ostree_gpg_verify)
         return [
             InstalledArtifactInfo(
                 name, 

@@ -1,6 +1,6 @@
 [General]
 # Whether to enable GPG verification when pulling updates for operating system or applications
-GPGVerify = false
+OSTreeGPGVerify = false
 
 # Where to store status information about latest operating system and application updates
 UpdateStatusPath = /var/log/fotahub/update-status.json
@@ -27,4 +27,4 @@ OSUpdateSelfTestCommand = bash -c 'echo "The freshly activated OS update runs ve
 
 [App]
 # Home location of application OSTree repository
-AppOSTreeHome = /apps/ostree_repo
+AppOSTreeRepoPath = /apps/ostree/repo

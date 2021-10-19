@@ -20,16 +20,16 @@ MAX_REBOOT_FAILURES_DEFAULT = 3
 
 class OSUpdater(object):
 
-    def __init__(self, os_distro_name, gpg_verify):
+    def __init__(self, os_distro_name, ostree_gpg_verify):
         self.logger = logging.getLogger()
 
         self.os_distro_name = os_distro_name
-        self.gpg_verify = gpg_verify
+        self.ostree_gpg_verify = ostree_gpg_verify
 
         [sysroot, repo] = self.__open_ostree_repo()
         self.sysroot = sysroot
         self.ostree_repo = OSTreeRepo(repo)
-        self.ostree_repo.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, self.gpg_verify)
+        self.ostree_repo.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, self.ostree_gpg_verify)
 
         self.uboot = UBootOperator()
     

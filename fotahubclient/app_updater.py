@@ -15,12 +15,12 @@ MAX_REBOOT_FAILURES_DEFAULT = 3
 
 class AppUpdater(object):
 
-    def __init__(self, repo_path, gpg_verify):
+    def __init__(self, ostree_repo_path, ostree_gpg_verify):
         self.logger = logging.getLogger()
 
-        self.gpg_verify = gpg_verify
+        self.gpg_verify = ostree_gpg_verify
 
-        repo = self.__open_ostree_repo(repo_path)
+        repo = self.__open_ostree_repo(ostree_repo_path)
         self.ostree_repo = OSTreeRepo(repo)
         self.ostree_repo.add_ostree_remote(constants.OSTREE_REMOTE_NAME, constants.OSTREE_REMOTE_URL, self.gpg_verify)
 
