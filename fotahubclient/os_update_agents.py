@@ -66,12 +66,12 @@ class OSUpdateFinalizer(object):
                         updater.confirm_os_update()
                         tracker.record_os_update_status(UpdateStatus.confirmed)
                     else:
-                        tracker.record_os_update_status(UpdateStatus.failed, message=message)
+                        tracker.record_os_update_status(UpdateStatus.failed, message=message, save_instantly=True)
                         updater.revert_os_update()
                 
                 elif updater.is_reverting_os_update():
+                    tracker.record_os_update_status(UpdateStatus.reverted, revision=updater.get_pending_os_revision())
                     updater.discard_os_update()
-                    tracker.record_os_update_status(UpdateStatus.reverted)
                 
                 else:
                     self.logger.info('No OS update or rollback in progress, nothing to do')

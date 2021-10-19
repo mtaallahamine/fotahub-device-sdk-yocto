@@ -49,23 +49,27 @@ class OSUpdater(object):
     def get_installed_os_revision(self):
         return self.sysroot.get_booted_deployment().get_csum()
 
+    def has_pending_os_revision(self):
+        return self.get_pending_os_revision() is not None
+
+    def get_pending_os_revision(self):
+        [pending, _] = self.sysroot.query_deployments_for(None)
+        return pending.get_csum() if pending is not None else None
+        
     def has_rollback_os_revision(self):
         return self.get_rollback_os_revision() is not None
 
     def get_rollback_os_revision(self):
         [_, rollback] = self.sysroot.query_deployments_for(None)
-        if rollback is None:
-            return None
-        return rollback.get_csum()
-        
+        return rollback.get_csum() if rollback is not None else None
+
     def pull_os_update(self, revision):
         self.ostree_repo.pull_ostree_revision(constants.FOTAHUB_OSTREE_REMOTE_NAME, self.os_distro_name, revision, constants.OSTREE_PULL_DEPTH)
 
     def __stage_os_update(self, revision):
         self.logger.info(
             "Staging OS update with revision '{}'".format(revision))
-        [pending, _] = self.sysroot.query_deployments_for(None)
-        if pending is not None:
+        if self.has_pending_os_revision():
             raise OSTreeError("Cannot stage any new OS update when some other OS update is still pending")
 
         try:
@@ -132,8 +136,7 @@ class OSUpdater(object):
         self.uboot.set_uboot_env_var(UBOOT_FLAG_REVERTING_OS_UPDATE)
 
         try:
-            [pending, _] = self.sysroot.query_deployments_for(None)
-            if pending is not None:                    
+            if self.has_pending_os_revision():                    
                 # 0 is the index of the pending deployment
                 # TODO Reimplement this behavior using OSTree API (see https://github.com/ostreedev/ostree/blob/8cb5d920c4b89d17c196f30f2c59fcbd4c762a17/src/ostree/ot-admin-builtin-undeploy.c#L59)
                 subprocess.run(["ostree", "admin", "undeploy", "0"], check=True)

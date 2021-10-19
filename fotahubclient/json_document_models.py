@@ -9,6 +9,7 @@ UPDATE_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 class ArtifactKind(Enum):
     OperatingSystem = 1
     Application = 2
+    Firmware = 3
 
 class UpdateStatus(Enum):
     downloaded = 1

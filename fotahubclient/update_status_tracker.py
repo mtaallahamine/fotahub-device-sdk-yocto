@@ -1,6 +1,7 @@
 import os
 import logging
 from datetime import datetime
+from re import S
 
 from fotahubclient.json_document_models import UPDATE_DATE_TIME_FORMAT, ArtifactKind
 from fotahubclient.json_document_models import UpdateStatuses, UpdateStatusInfo, UpdateStatus
@@ -22,7 +23,18 @@ class UpdateStatusTracker(object):
         return self 
 
     def record_os_update_status(self, status, revision=None, message=None, save_instantly=False):
-        update_status_info = self.__lookup_os_update_status(self.config.os_distro_name)
+        self.__record_update_status(self.config.os_distro_name, ArtifactKind.OperatingSystem, status, revision, message)
+        if save_instantly:
+            UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, True)
+
+    def record_app_update_status(self, status, revision=None, message=None):
+        self.__record_update_status(self.config.os_distro_name, ArtifactKind.Application, status, revision, message)
+
+    def record_fw_update_status(self, status, revision=None, message=None):
+        self.__record_update_status(self.config.os_distro_name, ArtifactKind.Firmware, status, revision, message)
+
+    def __record_update_status(self, artifact_name, artifact_kind, status, revision=None, message=None):
+        update_status_info = self.__lookup_update_status(artifact_name, artifact_kind)
         if update_status_info is not None:
             if update_status_info.status.is_final():
                 update_status_info.revision = None
@@ -37,32 +49,26 @@ class UpdateStatusTracker(object):
         else:
             self.__append_update_status(
                 UpdateStatusInfo(
-                    self.config.os_distro_name, 
-                    ArtifactKind.OperatingSystem, 
+                    artifact_name, 
+                    artifact_kind, 
                     revision,
                     datetime.today().strftime(UPDATE_DATE_TIME_FORMAT),
                     status,
                     self.__ensure_default_message(status, message)
                 )
-        )
-
-        if save_instantly:
-            UpdateStatuses.save_update_statuses(self.update_statuses, self.config.update_status_path, True)
+            )
 
     def __ensure_default_message(self, status, message):
         if message is None and status in UPDATE_STATUS_INFO_MESSAGE_DEFAULTS.keys():
             return UPDATE_STATUS_INFO_MESSAGE_DEFAULTS[status]
         return message
         
-    def __lookup_os_update_status(self, os_distro_name):
+    def __lookup_update_status(self, artifact_name, artifact_kind):
         for update_status_info in self.update_statuses.update_statuses:
-            if update_status_info.artifact_name == os_distro_name and update_status_info.artifact_kind == ArtifactKind.OperatingSystem:
+            if update_status_info.artifact_name == artifact_name and update_status_info.artifact_kind == artifact_kind:
                 return update_status_info
             else:
                 return None
-
-    def __lookup_app_update_status(self):
-        return None
 
     def __append_update_status(self, update_status_info):
         self.update_statuses.update_statuses.append(update_status_info)
