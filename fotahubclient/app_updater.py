@@ -8,8 +8,7 @@ from gi.repository import OSTree, GLib, Gio
 from pydbus import SystemBus
 
 import fotahubclient.common_constants as constants
-from fotahubclient.ostree_repo import OSTreeRepo
-from fotahubclient.ostree_repo import OSTreeError
+from fotahubclient.ostree_repo import OSTreeRepo, OSTreeError
 
 MAX_REBOOT_FAILURES_DEFAULT = 3
 
