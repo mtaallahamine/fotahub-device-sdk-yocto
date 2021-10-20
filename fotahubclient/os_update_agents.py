@@ -4,7 +4,8 @@ import shlex
 
 from fotahubclient.os_updater import OSUpdater
 from fotahubclient.system_helper import run_hook_command
-from fotahubclient.update_status_tracker import UpdateStatusTracker, UpdateStatus
+from fotahubclient.update_status_tracker import UpdateStatusTracker
+from fotahubclient.json_document_models import UpdateStatus
 
 class OSUpdateInitiator(object):
 
