@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ 
 create_yocto_project_layout()
 {
   # Locate Yocto project
@@ -33,6 +33,10 @@ create_yocto_project_layout()
   if [ -z "$YOCTO_BUILD_DIR" ]; then
     export YOCTO_BUILD_DIR="$YOCTO_DATA_DIR/build"
   fi
+  
+  # Locate OSTree repos
+  OS_OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo"
+  APPS_OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE/ostree_repo"
 
   return 0
 }
@@ -69,6 +73,15 @@ detect_machine()
   sed -n "s/^MACHINE\s*?*=\s*'\(.*\)'/\1/p" < $YOCTO_BUILD_DIR/conf/local.conf
 }
 
+detect_apps()
+{
+  if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
+    ostree --repo="$APPS_OSTREE_REPO_DIR" refs
+  else
+    echo ""
+  fi
+}
+
 yield_latest_os_disk_image()
 {
   local MACHINE=$1
@@ -83,10 +96,9 @@ yield_latest_os_disk_image()
 show_latest_os_revision()
 {
   local MACHINE=$1
-  local OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo"
 
-  if [ -d "$OSTREE_REPO_DIR" ]; then
-    echo "Latest OS revision: $(ostree --repo="$OSTREE_REPO_DIR" rev-parse fotahub-os-$MACHINE)"
+  if [ -d "$OS_OSTREE_REPO_DIR" ]; then
+    echo "Latest OS revision: $(ostree --repo="$OS_OSTREE_REPO_DIR" rev-parse fotahub-os-$MACHINE)"
   fi
 }
 
@@ -94,45 +106,44 @@ show_latest_app_revision()
 {
   local MACHINE=$1
   local APP=$2
-  local OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE/ostree_repo"
 
-  if [ -d "$OSTREE_REPO_DIR" ]; then
-    echo "Latest '$APP' revision: $(ostree --repo="$OSTREE_REPO_DIR" rev-parse $APP)"
+  if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
+    echo "Latest '$APP' revision: $(ostree --repo="$APPS_OSTREE_REPO_DIR" rev-parse $APP)"
   fi
 }
 
 show_latest_app_revisions()
 {
   local MACHINE=$1
-  local OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE/ostree_repo"
 
-  if [ -d "$OSTREE_REPO_DIR" ]; then
-    for REF in $(ostree --repo="$OSTREE_REPO_DIR" refs); do 
-      show_latest_app_revision $MACHINE $REF
-    done
-  fi
+  for APP in $(detect_apps); do 
+    show_latest_app_revision $MACHINE $APP
+  done
 }
 
 show_usage()
 {
   cat << EOF
 
-Usage: $(basename $0) command [args]
+Usage: $(basename $0) command [args...]
 
 Commands:
     sync <machine>
         Initialize/synchronize Yocto project for given machine
         (e.g. sync raspberrypi3)
 
-    all
+    all <bitbake args...>
         Build OS including all applications as well as machine-dependent live image
         (e.g. '.wic' for Raspberry Pi)
 
-    all-apps
+    all-apps <bitbake args...>
         Build all applications
 
-    app <app-name>
-        Rebuild given application
+    app <app-name> <bitbake args...>
+        Build given application
+
+    clean-all
+        Clean OS and all applications
 
     show-revisions
         Show latest OS and app revisions
@@ -206,19 +217,32 @@ main()
       ;;
 
     app)
-      if [ $# -ne 1 ]; then
-        echo "ERROR: The "$COMMAND" command requires exactly 1 argument. Use the 'help' command to get more details."
+      if [ $# -lt 1 ]; then
+        echo "ERROR: The "$COMMAND" command requires at least 1 argument. Use the 'help' command to get more details."
         exit 1
       fi
       local APP=$1
+      shift; set -- "$@"
 
       cd "$YOCTO_DATA_DIR"
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      DISTRO=fotahub-apps bitbake $APP -f -k
+      DISTRO=fotahub-apps bitbake $APP -k $@
       
       show_latest_app_revision "$MACHINE" "$APP"
+      ;;
+
+    clean-all)
+      cd "$YOCTO_DATA_DIR"
+      source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
+      local MACHINE=$(detect_machine)
+
+      for APP in $(detect_apps); do
+        DISTRO=fotahub-apps bitbake $APP -c clean
+      done
+      DISTRO=fotahub-apps bitbake fotahub-apps-package -c clean
+      DISTRO=fotahub-os bitbake fotahub-os-package -c clean
       ;;
 
     show-revisions)
