@@ -4,11 +4,7 @@ from datetime import datetime
 from re import S
 
 from fotahubclient.json_document_models import UPDATE_DATE_TIME_FORMAT, ArtifactKind
-from fotahubclient.json_document_models import UpdateStatuses, UpdateStatusInfo, UpdateStatus
-
-UPDATE_STATUS_INFO_MESSAGE_DEFAULTS = {
-    UpdateStatus.reverted: 'Update reverted due to application-level or external request'
-}
+from fotahubclient.json_document_models import UpdateStatuses, UpdateStatusInfo
 
 class UpdateStatusTracker(object):
 
@@ -37,31 +33,28 @@ class UpdateStatusTracker(object):
         update_status_info = self.__lookup_update_status(artifact_name, artifact_kind)
         if update_status_info is not None:
             if update_status_info.status.is_final():
-                update_status_info.revision = None
-                update_status_info.install_date = datetime.today().strftime(UPDATE_DATE_TIME_FORMAT)
-                update_status_info.message = None
-            
-            update_status_info.status = status
-            if revision is not None:
-                update_status_info.revision = revision
-            if message is not None:
-                update_status_info.message = message
+                update_status_info.reinit(
+                    revision, 
+                    datetime.now().strftime(UPDATE_DATE_TIME_FORMAT),
+                    status,
+                    message)
+            else:
+                if revision is not None:
+                    update_status_info.revision = revision
+                update_status_info.status = status
+                if message is not None:
+                    update_status_info.message = message
         else:
             self.__append_update_status(
                 UpdateStatusInfo(
                     artifact_name, 
                     artifact_kind, 
                     revision,
-                    datetime.today().strftime(UPDATE_DATE_TIME_FORMAT),
+                    datetime.now().strftime(UPDATE_DATE_TIME_FORMAT),
                     status,
-                    self.__ensure_default_message(status, message)
+                    message
                 )
             )
-
-    def __ensure_default_message(self, status, message):
-        if message is None and status in UPDATE_STATUS_INFO_MESSAGE_DEFAULTS.keys():
-            return UPDATE_STATUS_INFO_MESSAGE_DEFAULTS[status]
-        return message
         
     def __lookup_update_status(self, artifact_name, artifact_kind):
         for update_status_info in self.update_statuses.update_statuses:

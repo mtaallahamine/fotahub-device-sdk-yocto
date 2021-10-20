@@ -4,8 +4,6 @@ import os
 
 from fotahubclient.json_encode_decode import PascalCaseJSONEncoder, PascalCasedObjectArrayJSONDecoder
 
-UPDATE_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
 class ArtifactKind(Enum):
     OperatingSystem = 1
     Application = 2
@@ -22,6 +20,8 @@ class UpdateStatus(Enum):
     def is_final(self):
         return self == UpdateStatus.confirmed or self == UpdateStatus.reverted or self == UpdateStatus.failed
 
+UPDATE_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
 class InstalledArtifactInfo(object):
     def __init__(self, name, kind, installed_revision, rollback_revision=None):
         self.name = name
@@ -30,11 +30,15 @@ class InstalledArtifactInfo(object):
         self.rollback_revision = rollback_revision
 
 class InstalledArtifacts(object):
-    def __init__(self, installed_artifacts=[]):
-        self.installed_artifacts = installed_artifacts
+    def __init__(self, installed_artifacts=None):
+        self.installed_artifacts = installed_artifacts if installed_artifacts is not None else []
 
     def serialize(self):
         return json.dumps(self, indent=4, cls=PascalCaseJSONEncoder)
+
+UPDATE_STATUS_INFO_MESSAGE_DEFAULTS = {
+    UpdateStatus.reverted: 'Update reverted due to application-level or external request'
+}
 
 class UpdateStatusInfo(object):
     def __init__(self, artifact_name, artifact_kind, revision, install_date, status, message=None):
@@ -43,11 +47,22 @@ class UpdateStatusInfo(object):
         self.revision = revision
         self.install_date = install_date
         self.status = status
-        self.message = message
+        self.message = self.__ensure_default_message(status, message)
+
+    def reinit(self, revision, install_date, status, message=None):
+        self.revision = revision
+        self.install_date = install_date
+        self.status = status
+        self.message = self.__ensure_default_message(status, message)
+    
+    def __ensure_default_message(self, status, message):
+        if message is None and status in UPDATE_STATUS_INFO_MESSAGE_DEFAULTS.keys():
+            return UPDATE_STATUS_INFO_MESSAGE_DEFAULTS[status]
+        return message
 
 class UpdateStatuses(object):
-    def __init__(self, update_statuses=[]):
-        self.update_statuses = update_statuses
+    def __init__(self, update_statuses=None):
+        self.update_statuses = update_statuses if update_statuses is not None else []
 
     def serialize(self):
         return json.dumps(self, indent=4, cls=PascalCaseJSONEncoder)
