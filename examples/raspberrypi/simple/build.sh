@@ -33,10 +33,6 @@ create_yocto_project_layout()
   if [ -z "$YOCTO_BUILD_DIR" ]; then
     export YOCTO_BUILD_DIR="$YOCTO_DATA_DIR/build"
   fi
-  
-  # Locate OSTree repos
-  OS_OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE/ostree_repo"
-  APPS_OSTREE_REPO_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE/ostree_repo"
 
   return 0
 }
@@ -70,11 +66,28 @@ sync_yocto_layers()
 
 detect_machine()
 {
-  sed -n "s/^MACHINE\s*?*=\s*'\(.*\)'/\1/p" < $YOCTO_BUILD_DIR/conf/local.conf
+  sed -n 's/MACHINE\s*?*=\s*"\(.*\)"/\1/p' < $YOCTO_BUILD_DIR/conf/local.conf
+}
+
+locate_build_results()
+{
+  local MACHINE=$1
+
+  OS_IMAGE_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE"
+  APPS_IMAGE_DIR="$YOCTO_BUILD_DIR/tmp/fotahub-apps/deploy/images/$MACHINE"
+
+  OS_OSTREE_REPO_DIR="$OS_IMAGE_DIR/ostree_repo"
+  APPS_OSTREE_REPO_DIR="$APPS_IMAGE_DIR/ostree_repo"
+
+  OS_DISK_IMAGE_FILE="$OS_IMAGE_DIR/fotahub-os-package-$MACHINE.wic"
 }
 
 detect_apps()
 {
+  local MACHINE=$1
+
+  locate_build_results $MACHINE
+
   if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
     ostree --repo="$APPS_OSTREE_REPO_DIR" refs
   else
@@ -85,17 +98,20 @@ detect_apps()
 yield_latest_os_disk_image()
 {
   local MACHINE=$1
-  local WIC_FILE="$YOCTO_BUILD_DIR/tmp/fotahub-os/deploy/images/$MACHINE/fotahub-os-package-$MACHINE.wic"
 
-  if [ -f "$WIC_FILE" ]; then
+  locate_build_results $MACHINE
+
+  if [ -f "$OS_DISK_IMAGE_FILE" ]; then
     mkdir -p "$YOCTO_PROJECT_DIR/build/images"
-    cp "$WIC_FILE" "$YOCTO_PROJECT_DIR/build/images"
+    cp "$OS_DISK_IMAGE_FILE" "$YOCTO_PROJECT_DIR/build/images"
   fi
 }
 
 show_latest_os_revision()
 {
   local MACHINE=$1
+
+  locate_build_results $MACHINE
 
   if [ -d "$OS_OSTREE_REPO_DIR" ]; then
     echo "Latest OS revision: $(ostree --repo="$OS_OSTREE_REPO_DIR" rev-parse fotahub-os-$MACHINE)"
@@ -107,6 +123,8 @@ show_latest_app_revision()
   local MACHINE=$1
   local APP=$2
 
+  locate_build_results $MACHINE
+
   if [ -d "$APPS_OSTREE_REPO_DIR" ]; then
     echo "Latest '$APP' revision: $(ostree --repo="$APPS_OSTREE_REPO_DIR" rev-parse $APP)"
   fi
@@ -116,7 +134,7 @@ show_latest_app_revisions()
 {
   local MACHINE=$1
 
-  for APP in $(detect_apps); do 
+  for APP in $(detect_apps $MACHINE); do 
     show_latest_app_revision $MACHINE $APP
   done
 }
@@ -238,7 +256,7 @@ main()
       source $YOCTO_SOURCES_DIR/poky/oe-init-build-env $YOCTO_BUILD_DIR
       local MACHINE=$(detect_machine)
 
-      for APP in $(detect_apps); do
+      for APP in $(detect_apps $MACHINE); do
         DISTRO=fotahub-apps bitbake $APP -c clean
       done
       DISTRO=fotahub-apps bitbake fotahub-apps-package -c clean
