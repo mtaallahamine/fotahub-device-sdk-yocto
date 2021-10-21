@@ -47,7 +47,8 @@ class OSUpdater(object):
             raise OSTreeError('Failed to open OS OSTree repo') from err
 
     def get_installed_os_revision(self):
-        return self.sysroot.get_booted_deployment().get_csum()
+        deploy = self.sysroot.get_booted_deployment()
+        return deploy.get_csum() if deploy is not None else None
 
     def has_pending_os_revision(self):
         return self.get_pending_os_revision() is not None
