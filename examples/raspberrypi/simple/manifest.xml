@@ -17,7 +17,7 @@
   
   <project remote="advancedtelematic" revision="rocko" name="meta-updater" path="meta-updater"/>
   <project remote="fullmetalupdate" revision="rocko" name="meta-fullmetalupdate-extra" path="meta-fullmetalupdate-extra"/>
-  <project remote="fotahub" revision="main" name="meta-fotahub" path="meta-fotahub"/>
+  <project remote="fotahub" revision="rocko" name="meta-fotahub" path="meta-fotahub"/>
 
   <project remote="qt" revision="rocko" name="meta-qt5" path="meta-qt5"/>
 
