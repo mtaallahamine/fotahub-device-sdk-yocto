@@ -16,9 +16,14 @@ class UpdateStatus(Enum):
     confirmed = 4 
     reverted = 5
     failed = 6
+    downloadFailed = 7
+    verificationFailed = 8
+    activationFailed = 9
+    confirmationFailed = 10
+    reversionFailed = 11
 
     def is_final(self):
-        return self == UpdateStatus.confirmed or self == UpdateStatus.reverted or self == UpdateStatus.failed
+        return self == UpdateStatus.confirmed or self == UpdateStatus.reverted or self >= UpdateStatus.failed
 
 UPDATE_DATE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
